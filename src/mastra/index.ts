@@ -7,7 +7,9 @@ import {
 } from '@mastra/observability';
 import { agent } from './agents/agent';
 import memory from './memory';
+import { ensureDataSynced } from '../utils/syncData';
 
+await ensureDataSynced();
 export const mastra = new Mastra({
   bundler: {
     externals: ['@duckdb/node-bindings'],
