@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from "node:crypto";
 
 export function getProjectRoot(): string {
   let curr = process.cwd();
@@ -44,5 +45,8 @@ const cleanupText = (
 
   return rerankedResults;
 };
+function generateId(): string {
+  return randomUUID();
+}
 
-export { cleanupText };
+export { cleanupText, generateId };
