@@ -1,0 +1,66 @@
+{
+  "name": "bookishai",
+  "version": "1.0.0",
+  "description": "A general-purpose Mastra agent with a local workspace, shell tools, memory, task tracking, web access, and recurring schedules.",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,mdx,css,scss,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@lancedb/lancedb": "^0.38.0",
+    "@mastra/core": "1.67.0",
+    "@mastra/duckdb": "1.9.0",
+    "@mastra/libsql": "1.23.0",
+    "@mastra/memory": "1.30.0",
+    "@mastra/observability": "1.17.8",
+    "@mastra/rag": "^2.6.3",
+    "ai": "^7.0.99",
+    "ai-sdk-ollama": "^4.3.0",
+    "dotenv": "^17.4.2",
+    "mongoose": "^9.10.1",
+    "pdf-parse": "^2.4.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/dotenv": "^8.2.3",
+    "@types/node": "latest",
+    "@types/pdf-parse": "^1.1.5",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "mastra": "1.30.0",
+    "prettier": "^3.9.7",
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.0"
+  }
+}

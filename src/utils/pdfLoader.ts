@@ -1,0 +1,110 @@
+import fs from 'fs';
+import path from 'path';
+import { parsePdf } from './pdfParser';
+import { ProgressState } from '../mastra/types/utils.types';
+import { MDocument } from '@mastra/rag';
+import { embedMany } from 'ai';
+import { embeddingModel } from '../mastra/config/config';
+import { prepareEmbedding } from './prepareEmbedding';
+const BOOKS_DIR = path.join(process.cwd(), 'books');
+const META_FILE = path.join(process.cwd(), 'progress.json');
+import { chunkRepository } from '../mastra/database/repositories/ChunkRepository';
+import { CreateChunkInput } from '../mastra/types/chunk.types';
+
+function loadProgress(): ProgressState {
+  if (fs.existsSync(META_FILE)) {
+    try {
+      const data = fs.readFileSync(META_FILE, 'utf-8');
+      return JSON.parse(data);
+    } catch {
+      console.warn('⚠️ Could not read progress file. Starting fresh.');
+    }
+  }
+  return {
+    currentIndex: -1,
+  };
+}
+
+function saveProgress(state: ProgressState) {
+  fs.writeFileSync(META_FILE, JSON.stringify(state, null, 2), 'utf-8');
+}
+
+const FOLDERS = ['6th', '7th', '8th', '9th', '10th', '11th', '12th', 'side-docs'];
+
+export async function loadBooksSequentially() {
+  const files = [];
+
+  for (const folder of FOLDERS) {
+    const folderPath = path.join(BOOKS_DIR, folder);
+
+    if (!fs.existsSync(folderPath)) {
+      console.log(`⚠️ Folder not found: ${folder}`);
+      continue;
+    }
+    const folderFiles = fs.readdirSync(folderPath);
+    const pdfFiles = folderFiles.filter((file) => file.endsWith('.pdf') || file.endsWith('.md'));
+    files.push(...pdfFiles.map((file) => path.join(folderPath, file)));
+  }
+  const progress = loadProgress();
+  const startIndex = progress.currentIndex + 1;
+  for (let i = startIndex; i < files.length; i++) {
+    console.log(`📄 Processing file ${i + 1} of ${files.length}: ${files[i]}`);
+    const file = files[i];
+    let rawText: string;
+    const isMarkdown = file.endsWith('.md');
+    if (isMarkdown) {
+      rawText = fs.readFileSync(file, 'utf-8');
+    } else {
+      const text = await parsePdf(file);
+      rawText = text.text;
+    }
+    const doc = MDocument.fromText(rawText, {
+      metadata: {
+        source: file,
+        type: isMarkdown ? 'markdown' : 'pdf',
+      },
+    });
+    let chunks;
+    if (isMarkdown) {
+      chunks = await doc.chunk({
+        strategy: 'markdown',
+        maxSize: 800,
+        overlap: 100,
+      });
+    } else {
+      chunks = await doc.chunk({
+        strategy: 'recursive',
+        maxSize: 800,
+        overlap: 100,
+        separators: ['\n\n', '\n', ' ', ''],
+      });
+    }
+    const textsToEmbed = chunks.map((c: { text: string }) => c.text);
+    if (textsToEmbed.length > 0) {
+      const { embeddings } = await embedMany({
+        model: embeddingModel,
+        values: textsToEmbed,
+      });
+      const prepared = prepareEmbedding(chunks, embeddings);
+      const docsToInsert: CreateChunkInput[] = prepared.map((item, index) => ({
+        text: item.text,
+        vector: item.embedding,
+        metadata: {
+          source: file,
+          grade: file.split(path.sep).includes('side-docs')
+            ? 'side-docs'
+            : file.split(path.sep).slice(-2, -1)[0],
+        },
+        chunkIndex: index,
+      }));
+      await chunkRepository.addMany(docsToInsert);
+      console.log(`✅ Successfully processed and inserted chunks for: ${file}`);
+    }
+    progress.currentIndex = i;
+    saveProgress(progress);
+  }
+}
+
+loadBooksSequentially().catch((err) => {
+  console.error(' Error loading books:', err);
+});

@@ -1,0 +1,6 @@
+# .prettierignore
+dist
+node_modules
+.mastra
+.next
+pnpm-lock.yaml
