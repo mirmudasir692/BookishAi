@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 
 export function getProjectRoot(): string {
   let curr = process.cwd();

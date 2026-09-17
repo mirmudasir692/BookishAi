@@ -5,8 +5,8 @@ ObservabilityLibSQL.prototype.listFeedback = async function () {
 };
 
 const storage = new LibSQLStore({
-    id: 'agent-storage',
-    url: 'file:./agents.db',
+  id: 'agent-storage',
+  url: 'file:./agents.db',
 });
 
 export default storage;

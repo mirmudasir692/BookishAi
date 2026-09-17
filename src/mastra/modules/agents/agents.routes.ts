@@ -185,6 +185,8 @@ router.get('/conversations/:threadId', (req, res) => agentsController.getConvers
  *       500:
  *         description: Internal server error
  */
-router.delete('/conversations/:threadId', (req, res) => agentsController.deleteConversation(req, res));
+router.delete('/conversations/:threadId', (req, res) =>
+  agentsController.deleteConversation(req, res)
+);
 
 export default router;

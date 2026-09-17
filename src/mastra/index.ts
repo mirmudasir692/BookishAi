@@ -1,9 +1,5 @@
 import { Mastra } from '@mastra/core/mastra';
-import {
-  MastraPlatformExporter,
-  Observability,
-  SensitiveDataFilter,
-} from '@mastra/observability';
+import { MastraPlatformExporter, Observability, SensitiveDataFilter } from '@mastra/observability';
 import { agent } from './agents/agent';
 import memory from './memory';
 import { ensureDataSynced } from '../utils/syncData';
