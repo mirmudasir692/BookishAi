@@ -12,6 +12,9 @@ import {
   GetConversationInputSchema,
   DeleteConversationInputSchema,
 } from '../../dto/agents/agents.input';
+import { generateText } from 'ai';
+import { chatModel } from '../../config/config';
+import { prompts } from '../../utils/prompts';
 
 export class ValidationError extends Error {
   public issues: any[];
@@ -29,13 +32,17 @@ export class AgentsService {
     this.agent = mastra.getAgent('agent');
   }
 
-  async chat(rawInput: unknown): Promise<ChatResponse> {
-    const validation = ChatInputSchema.safeParse(rawInput);
+  async chat(inputText: unknown): Promise<ChatResponse> {
+    const validation = ChatInputSchema.safeParse(inputText);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
     }
+    const { text: query } = await generateText({
+      model: chatModel,
+      prompt: prompts('QueryRewrite', inputText),
+    });
 
-    const { query, threadId } = validation.data;
+    const { threadId } = validation.data;
     const finalThreadId = threadId || generateId();
 
     const response = await this.agent.generate(query, { memory: { thread: finalThreadId } });
