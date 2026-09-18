@@ -1,5 +1,5 @@
 import { createOllama } from 'ai-sdk-ollama';
-import env from './env.config';
+import env from '../../../config/env.config';
 
 const ollama = createOllama({
   baseURL: env.OLLAMA_BASE_URL,

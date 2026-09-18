@@ -12,8 +12,20 @@
     "checkJs": true,
     "resolveJsonModule": true,
     "types": ["node"],
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "$lib": ["app/src/lib"],
+      "$lib/*": ["app/src/lib/*"]
+    },
     "noEmit": true,
     "outDir": "dist"
   },
-  "include": ["src/**/*", "app/src/**/*", "app/vite.config.ts"]
+  "include": [
+    "ambient.d.ts",
+    "src/**/*",
+    "app/src/**/*",
+    "app/vite.config.ts",
+    "config/env.config.ts"
+  ]
 }

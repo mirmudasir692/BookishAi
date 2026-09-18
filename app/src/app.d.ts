@@ -1,13 +1,10 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+declare module '*.svelte' {
+  const component: import('svelte').Component<Record<string, unknown>>;
+  export default component;
+}
+
 declare global {
-  namespace App {
-    // interface Error {}
-    // interface Locals {}
-    // interface PageData {}
-    // interface PageState {}
-    // interface Platform {}
-  }
+  namespace App {}
 }
 
 export {};
