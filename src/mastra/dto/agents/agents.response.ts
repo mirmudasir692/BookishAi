@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, ZodIssue } from 'zod';
 
 export const ChatResponseSchema = z.object({
   message: z.string(),
@@ -19,7 +19,7 @@ export const GetConversationsResponseSchema = z.array(ThreadSchema);
 export const MessageSchema = z.object({
   id: z.string(),
   role: z.enum(['user', 'assistant', 'system', 'tool', 'signal']),
-  content: z.any(),
+  content: z.unknown(),
   createdAt: z.union([z.string(), z.date()]).optional(),
 });
 
@@ -32,7 +32,18 @@ export const DeleteConversationResponseSchema = z.object({
   success: z.boolean(),
 });
 
+export const ErrorResponseSchema = z.object({
+  error: z.string(),
+  details: z.array(z.custom<ZodIssue>()).optional(),
+});
+
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+export type Thread = z.infer<typeof ThreadSchema>;
+export type Message = z.infer<typeof MessageSchema>;
 export type GetConversationsResponse = z.infer<typeof GetConversationsResponseSchema>;
 export type GetConversationResponse = z.infer<typeof GetConversationResponseSchema>;
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
+export type ErrorResponse = {
+  error: string;
+  details?: ZodIssue[];
+};

@@ -1,24 +1,28 @@
 import { Agent } from '@mastra/core/agent';
+import { ZodIssue } from 'zod';
+import { generateText } from 'ai';
 import { mastra } from '../..';
 import { generateId } from '../../utils/helpers';
+import { chatModel } from '../../config/config';
+import { prompts } from '../../utils/prompts';
 import {
+  ChatInput,
+  ChatInputSchema,
+  GetConversationsInput,
+  GetConversationsInputSchema,
+  GetConversationInput,
+  GetConversationInputSchema,
+  DeleteConversationInput,
+  DeleteConversationInputSchema,
   ChatResponse,
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
-} from '../../dto/agents/agents.response';
-import {
-  ChatInputSchema,
-  GetConversationInputSchema,
-  DeleteConversationInputSchema,
-} from '../../dto/agents/agents.input';
-import { generateText } from 'ai';
-import { chatModel } from '../../config/config';
-import { prompts } from '../../utils/prompts';
+} from '../../dto/agents';
 
 export class ValidationError extends Error {
-  public issues: any[];
-  constructor(message: string, issues: any[]) {
+  public issues: ZodIssue[];
+  constructor(message: string, issues: ZodIssue[]) {
     super(message);
     this.name = 'ValidationError';
     this.issues = issues;
@@ -32,17 +36,17 @@ export class AgentsService {
     this.agent = mastra.getAgent('agent');
   }
 
-  async chat(inputText: unknown): Promise<ChatResponse> {
-    const validation = ChatInputSchema.safeParse(inputText);
+  async chat(rawInput: ChatInput | unknown): Promise<ChatResponse> {
+    const validation = ChatInputSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
     }
+    const { query: userQuery, threadId } = validation.data;
     const { text: query } = await generateText({
       model: chatModel,
-      prompt: prompts('QueryRewrite', inputText),
+      prompt: prompts('QueryRewrite', userQuery),
     });
 
-    const { threadId } = validation.data;
     const finalThreadId = threadId || generateId();
 
     const response = await this.agent.generate(query, { memory: { thread: finalThreadId } });
@@ -52,15 +56,24 @@ export class AgentsService {
     };
   }
 
-  async getConversations(): Promise<GetConversationsResponse> {
+  async getConversations(
+    rawInput?: GetConversationsInput | unknown
+  ): Promise<GetConversationsResponse> {
+    const validation = GetConversationsInputSchema.safeParse(rawInput ?? {});
+    if (!validation.success) {
+      throw new ValidationError('Invalid input', validation.error.issues);
+    }
+
     const memory = await this.agent.getMemory();
     if (!memory) return [];
 
-    const result = await memory.listThreads({});
-    return result?.threads || [];
+    const result = await memory.listThreads(validation.data);
+    return (result?.threads as unknown as GetConversationsResponse) || [];
   }
 
-  async getConversation(rawInput: unknown): Promise<GetConversationResponse> {
+  async getConversation(
+    rawInput: GetConversationInput | unknown
+  ): Promise<GetConversationResponse> {
     const validation = GetConversationInputSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
@@ -73,11 +86,13 @@ export class AgentsService {
     const result = await memory.recall({ threadId });
     return {
       threadId,
-      messages: result?.messages || [],
+      messages: (result?.messages as unknown as GetConversationResponse['messages']) || [],
     };
   }
 
-  async deleteConversation(rawInput: unknown): Promise<DeleteConversationResponse> {
+  async deleteConversation(
+    rawInput: DeleteConversationInput | unknown
+  ): Promise<DeleteConversationResponse> {
     const validation = DeleteConversationInputSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
