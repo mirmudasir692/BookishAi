@@ -15,20 +15,33 @@ export interface SidebarProps {
   conversations: Thread[];
   isLoading: boolean;
   errorMessage?: string | null;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
   onSelectThread: (threadId: string | null) => void;
   onNewChat: () => void;
   onDeleteThread: (threadId: string) => Promise<void> | void;
   onRefresh?: () => Promise<void> | void;
 }
 
+export interface ChatMessage extends Omit<Message, 'content'> {
+  content: string;
+  thinking?: string;
+  isThinking?: boolean;
+  isStreaming?: boolean;
+}
+
 export interface MessageBubbleProps {
   role: 'user' | 'assistant' | 'system' | 'tool' | 'signal' | string;
   content: unknown;
-  createdAt?: string | Date;
+  thinking?: string;
+  isThinking?: boolean;
+  isStreaming?: boolean;
+  createdAt?: string | Date | null;
 }
 
 export interface ChatAreaProps {
   selectedThreadId: string | null;
   onNewConversationCreated?: (threadId: string) => void;
   onStartNewChat?: () => void;
+  onToggleMobileSidebar?: () => void;
 }

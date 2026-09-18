@@ -1,27 +1,38 @@
 import { z, ZodIssue } from 'zod';
 
-export const ChatResponseSchema = z.object({
-  message: z.string(),
-  threadId: z.string(),
-});
+export const StreamEventSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('metadata'), threadId: z.string() }),
+  z.object({ type: z.literal('thinking'), content: z.string() }),
+  z.object({ type: z.literal('answer'), content: z.string() }),
+  z.object({ type: z.literal('error'), error: z.string(), details: z.array(z.any()).optional() }),
+]);
 
-export const ThreadSchema = z.object({
-  id: z.string(),
-  resourceId: z.string(),
-  title: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  createdAt: z.union([z.string(), z.date()]).optional(),
-  updatedAt: z.union([z.string(), z.date()]).optional(),
-});
+export type StreamEvent = z.infer<typeof StreamEventSchema>;
+
+export const ThreadSchema = z
+  .object({
+    id: z.string(),
+    resourceId: z.string().nullish(),
+    title: z.string().nullish(),
+    metadata: z.record(z.string(), z.unknown()).nullish(),
+    createdAt: z.union([z.string(), z.date()]).nullish(),
+    updatedAt: z.union([z.string(), z.date()]).nullish(),
+  })
+  .passthrough();
 
 export const GetConversationsResponseSchema = z.array(ThreadSchema);
 
-export const MessageSchema = z.object({
-  id: z.string(),
-  role: z.enum(['user', 'assistant', 'system', 'tool', 'signal']),
-  content: z.unknown(),
-  createdAt: z.union([z.string(), z.date()]).optional(),
-});
+export const MessageSchema = z
+  .object({
+    id: z.string(),
+    role: z.enum(['user', 'assistant', 'system', 'tool', 'signal']).or(z.string()),
+    content: z.unknown(),
+    thinking: z.string().nullish(),
+    createdAt: z.union([z.string(), z.date()]).nullish(),
+    threadId: z.string().nullish(),
+    resourceId: z.string().nullish(),
+  })
+  .passthrough();
 
 export const GetConversationResponseSchema = z.object({
   threadId: z.string(),
@@ -37,7 +48,6 @@ export const ErrorResponseSchema = z.object({
   details: z.array(z.custom<ZodIssue>()).optional(),
 });
 
-export type ChatResponse = z.infer<typeof ChatResponseSchema>;
 export type Thread = z.infer<typeof ThreadSchema>;
 export type Message = z.infer<typeof MessageSchema>;
 export type GetConversationsResponse = z.infer<typeof GetConversationsResponseSchema>;

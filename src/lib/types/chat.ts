@@ -24,7 +24,7 @@ export interface SidebarProps {
 export interface MessageBubbleProps {
   role: 'user' | 'assistant' | 'system' | 'tool' | 'signal' | string;
   content: unknown;
-  createdAt?: string | Date;
+  createdAt?: string | Date | null;
 }
 
 export interface ChatAreaProps {

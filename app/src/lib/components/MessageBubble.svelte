@@ -1,26 +1,40 @@
 <script lang="ts">
   import type { MessageBubbleProps } from '$lib/types/chat';
-  import { Avatar, AvatarFallback } from '$lib/components/ui/avatar';
-  import { Card, CardContent } from '$lib/components/ui/card';
-  import { User, Bot } from '@lucide/svelte';
+  import { Button } from '$lib/components/ui/button';
+  import { renderMarkdown } from '$lib/markdown';
+  import { parseMessageContent } from '$lib/message-parser';
+  import { Sparkles, ChevronRight, BrainCircuit, Copy, Check } from '@lucide/svelte';
 
-  let { role, content, createdAt }: MessageBubbleProps = $props();
+  let {
+    role,
+    content,
+    thinking = '',
+    isThinking = false,
+    isStreaming = false,
+    createdAt,
+  }: MessageBubbleProps = $props();
+
+  let userToggledOpen = $state<boolean | null>(null);
+  let isCopied = $state(false);
 
   const isUser = $derived(role === 'user');
 
-  const textContent = $derived.by(() => {
-    if (typeof content === 'string') return content;
-    if (content && typeof content === 'object') {
-      if ('text' in content && typeof (content as { text: unknown }).text === 'string') {
-        return (content as { text: string }).text;
-      }
-      try {
-        return JSON.stringify(content, null, 2);
-      } catch {
-        return String(content);
-      }
-    }
-    return String(content ?? '');
+  const parsed = $derived.by(() => {
+    return parseMessageContent(content);
+  });
+
+  const rawTextContent = $derived.by(() => {
+    return parsed.text;
+  });
+
+  const effectiveThinking = $derived.by(() => {
+    if (thinking && thinking.trim().length > 0) return thinking;
+    return parsed.thinking;
+  });
+
+  const formattedHtml = $derived.by(() => {
+    if (isUser) return '';
+    return renderMarkdown(rawTextContent);
   });
 
   const formattedTime = $derived.by(() => {
@@ -29,52 +43,150 @@
     if (isNaN(date.getTime())) return null;
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   });
+
+  const isThinkingExpanded = $derived.by(() => {
+    if (userToggledOpen !== null) return userToggledOpen;
+    return isThinking && (!rawTextContent || rawTextContent.trim().length === 0);
+  });
+
+  function toggleThinking() {
+    userToggledOpen = !isThinkingExpanded;
+  }
+
+  async function handleCopy() {
+    if (!rawTextContent) return;
+    try {
+      await navigator.clipboard.writeText(rawTextContent);
+      isCopied = true;
+      setTimeout(() => {
+        isCopied = false;
+      }, 2000);
+    } catch (e) {
+      console.error('Failed to copy text:', e);
+    }
+  }
 </script>
 
-<div
-  class="flex w-full gap-3 px-4 py-3 {isUser
-    ? 'flex-row-reverse justify-start'
-    : 'flex-row justify-start'}"
->
-  <Avatar
-    class="size-8 shrink-0 border {isUser
-      ? 'bg-primary text-primary-foreground'
-      : 'bg-muted text-foreground'}"
-  >
-    <AvatarFallback class="text-xs font-semibold">
-      {#if isUser}
-        <User class="size-4" />
-      {:else}
-        <Bot class="text-primary size-4" />
-      {/if}
-    </AvatarFallback>
-  </Avatar>
-
-  <div
-    class="flex max-w-[85%] flex-col gap-1 md:max-w-[75%] {isUser ? 'items-end' : 'items-start'}"
-  >
-    <div class="text-muted-foreground flex items-center gap-2 px-1 text-xs">
-      <span class="font-medium capitalize">{isUser ? 'You' : 'Bookish AI'}</span>
-      {#if formattedTime}
-        <span>•</span>
-        <span>{formattedTime}</span>
-      {/if}
-    </div>
-
-    {#if isUser}
-      <Card class="bg-primary text-primary-foreground rounded-2xl rounded-tr-xs border-0 shadow-sm">
-        <CardContent class="p-3 text-sm leading-relaxed break-words whitespace-pre-wrap">
-          {textContent}
-        </CardContent>
-      </Card>
-    {:else}
-      <Card class="bg-card text-card-foreground rounded-2xl rounded-tl-xs border shadow-xs">
-        <CardContent
-          class="prose prose-zinc dark:prose-invert max-w-none p-3.5 text-sm leading-relaxed break-words whitespace-pre-wrap"
+<div class="group/msg relative w-full py-3 transition-colors">
+  {#if isUser}
+    <!-- User Message: Distinct rounded bubble with clear separation -->
+    <div class="flex w-full justify-end px-2 sm:px-4">
+      <div class="flex max-w-[85%] flex-col items-end gap-1.5 sm:max-w-[75%]">
+        <div
+          class="bg-secondary text-foreground border-border/80 inline-block rounded-[22px] rounded-br-xs border px-5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap shadow-2xs"
         >
-          {textContent}
-        </CardContent>
-      </Card>
-    {/if}
-  </div>
+          {rawTextContent}
+        </div>
+        {#if formattedTime}
+          <span class="text-muted-foreground/70 px-1 text-[11px]">{formattedTime}</span>
+        {/if}
+      </div>
+    </div>
+  {:else}
+    <!-- Assistant Message: Clean ChatGPT flowing response with crisp black text -->
+    <div class="flex w-full items-start gap-3.5 px-2 sm:px-4">
+      <div
+        class="bg-primary text-primary-foreground flex size-7.5 shrink-0 items-center justify-center rounded-xl shadow-2xs"
+      >
+        <Sparkles class="size-4" />
+      </div>
+
+      <div class="flex min-w-0 flex-1 flex-col gap-2.5">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-foreground font-semibold tracking-tight">Bookish AI</span>
+          {#if isStreaming && !isThinking}
+            <span class="bg-primary inline-flex size-1.5 animate-pulse rounded-full"></span>
+          {/if}
+          {#if formattedTime}
+            <span class="text-muted-foreground/60">•</span>
+            <span class="text-muted-foreground/70 text-[11px]">{formattedTime}</span>
+          {/if}
+        </div>
+
+        <!-- Collapsible Thinking / Reasoning Block -->
+        {#if effectiveThinking || isThinking}
+          <div
+            class="bg-muted/40 border-border/80 my-1 overflow-hidden rounded-2xl border text-xs transition-all"
+          >
+            <button
+              type="button"
+              onclick={toggleThinking}
+              class="hover:bg-muted/70 text-foreground/80 flex w-full cursor-pointer items-center justify-between gap-2 px-3.5 py-2.5 text-left font-medium transition-colors select-none"
+            >
+              <div class="flex items-center gap-2">
+                <BrainCircuit class="text-primary size-4 {isThinking ? 'animate-pulse' : ''}" />
+                <span class="text-foreground font-medium">
+                  {#if isThinking && (!rawTextContent || rawTextContent.length === 0)}
+                    Thinking & searching knowledge base...
+                  {:else}
+                    Thought Process
+                  {/if}
+                </span>
+                {#if isThinking}
+                  <span class="bg-primary/80 inline-flex size-1.5 animate-ping rounded-full"></span>
+                {/if}
+              </div>
+              <ChevronRight
+                class="text-muted-foreground size-4 transition-transform duration-200 {isThinkingExpanded
+                  ? 'rotate-90'
+                  : ''}"
+              />
+            </button>
+
+            {#if isThinkingExpanded}
+              <div
+                class="border-border/60 bg-background/50 text-foreground/80 border-t px-4 py-3 font-mono text-[12.5px] leading-relaxed break-words whitespace-pre-wrap"
+              >
+                {effectiveThinking}
+                {#if isThinking}
+                  <span class="bg-primary inline-block h-3.5 w-1 animate-pulse align-middle"></span>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Assistant Response Body (Rendered Markdown with Crisp Contrast) -->
+        {#if rawTextContent}
+          <div class="prose text-foreground max-w-none text-[15px] leading-7 break-words">
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+            {@html formattedHtml}
+            {#if isStreaming && !isThinking}
+              <span class="bg-primary ml-1 inline-block h-4.5 w-1.5 animate-pulse align-middle"
+              ></span>
+            {/if}
+          </div>
+        {:else if isStreaming && !effectiveThinking}
+          <div class="text-muted-foreground flex items-center gap-1.5 py-2 text-xs">
+            <span class="bg-primary size-2 animate-bounce rounded-full [animation-delay:-0.3s]"
+            ></span>
+            <span class="bg-primary size-2 animate-bounce rounded-full [animation-delay:-0.15s]"
+            ></span>
+            <span class="bg-primary size-2 animate-bounce rounded-full"></span>
+          </div>
+        {/if}
+
+        <!-- Message Actions (Copy response) -->
+        {#if rawTextContent && !isStreaming}
+          <div
+            class="flex items-center gap-1 pt-1.5 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100"
+          >
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              class="text-muted-foreground hover:text-foreground size-7.5 rounded-lg"
+              onclick={handleCopy}
+              aria-label="Copy response"
+            >
+              {#if isCopied}
+                <Check class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              {:else}
+                <Copy class="size-3.5" />
+              {/if}
+            </Button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 </div>

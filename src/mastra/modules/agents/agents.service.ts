@@ -14,7 +14,6 @@ import {
   GetConversationInputSchema,
   DeleteConversationInput,
   DeleteConversationInputSchema,
-  ChatResponse,
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
@@ -28,6 +27,13 @@ export class ValidationError extends Error {
     this.issues = issues;
   }
 }
+type StreamEvent =
+  | { type: 'metadata'; threadId: string }
+  | { type: 'thinking'; content: string }
+  | { type: 'answer'; content: string }
+  | { type: 'error'; error: string; details?: any[] };
+
+import { parseMessageContent } from '../../utils/message-parser';
 
 export class AgentsService {
   private agent: Agent;
@@ -36,26 +42,49 @@ export class AgentsService {
     this.agent = mastra.getAgent('agent');
   }
 
-  async chat(rawInput: ChatInput | unknown): Promise<ChatResponse> {
+  async *chatStream(rawInput: ChatInput | unknown): AsyncGenerator<StreamEvent> {
     const validation = ChatInputSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
     }
+
     const { query: userQuery, threadId } = validation.data;
+    const finalThreadId = threadId || generateId();
+    yield { type: 'metadata', threadId: finalThreadId };
+
     const { text: query } = await generateText({
       model: chatModel,
       prompt: prompts('QueryRewrite', userQuery),
     });
 
-    const finalThreadId = threadId || generateId();
+    const response = await this.agent.stream(query, {
+      memory: { thread: finalThreadId, resource: 'anonymous' },
+    });
 
-    const response = await this.agent.generate(query, { memory: { thread: finalThreadId } });
-    return {
-      message: response.text,
-      threadId: finalThreadId,
-    };
+    for await (const chunk of response.fullStream) {
+      if (chunk.type === 'text-delta') {
+        yield { type: 'answer', content: chunk.payload.text };
+      } else if (chunk.type === 'reasoning-delta') {
+        yield { type: 'thinking', content: chunk.payload.text };
+      } else if (chunk.type === 'tool-call') {
+        const payload = chunk.payload as { args?: { query?: string }; toolName?: string };
+        const queryArg = payload?.args?.query;
+        const msg = queryArg
+          ? `🔍 Searching knowledge base for "${queryArg}"...\n`
+          : `🔍 Calling tool ${payload?.toolName || 'search'}...\n`;
+        yield { type: 'thinking', content: msg };
+      } else if (chunk.type === 'tool-result') {
+        const payload = chunk.payload as { result?: { results?: unknown[] } };
+        const results = payload?.result?.results;
+        const count = Array.isArray(results) ? results.length : null;
+        const msg =
+          count !== null
+            ? `✅ Found ${count} relevant documents from library.\n\n`
+            : `✅ Search completed.\n\n`;
+        yield { type: 'thinking', content: msg };
+      }
+    }
   }
-
   async getConversations(
     rawInput?: GetConversationsInput | unknown
   ): Promise<GetConversationsResponse> {
@@ -84,9 +113,19 @@ export class AgentsService {
     if (!memory) return { threadId, messages: [] };
 
     const result = await memory.recall({ threadId });
+    const rawMessages = (result?.messages as unknown as any[]) || [];
+    const normalizedMessages = rawMessages.map((msg) => {
+      const parsed = parseMessageContent(msg.content ?? msg);
+      return {
+        ...msg,
+        content: parsed.text,
+        thinking: parsed.thinking || msg.thinking || undefined,
+      };
+    });
+
     return {
       threadId,
-      messages: (result?.messages as unknown as GetConversationResponse['messages']) || [],
+      messages: normalizedMessages as GetConversationResponse['messages'],
     };
   }
 

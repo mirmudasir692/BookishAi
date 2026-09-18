@@ -1,25 +1,123 @@
 import {
   ChatInputSchema,
-  ChatResponse,
-  ChatResponseSchema,
   DeleteConversationInputSchema,
-  DeleteConversationResponse,
+  type DeleteConversationResponse,
   DeleteConversationResponseSchema,
   GetConversationInputSchema,
-  GetConversationResponse,
+  type GetConversationResponse,
   GetConversationResponseSchema,
   GetConversationsInputSchema,
-  GetConversationsResponse,
+  type GetConversationsResponse,
   GetConversationsResponseSchema,
+  type StreamEvent,
 } from '../../../../../src/mastra/dto';
-import { apiClient } from '../client';
+import { apiClient, baseURL } from '../client';
 
-export const chatWithAgent = async (input: unknown): Promise<ChatResponse> => {
+export interface ChatStreamCallbacks {
+  onMetadata?: (data: { threadId: string }) => void;
+  onThinking?: (chunk: string, accumulated: string) => void;
+  onAnswer?: (chunk: string, accumulated: string) => void;
+  onError?: (error: string, details?: unknown[]) => void;
+  onDone?: (finalResult: { threadId: string; thinking: string; answer: string }) => void;
+}
+
+export const chatWithAgentStream = async (
+  input: unknown,
+  callbacks: ChatStreamCallbacks = {},
+  signal?: AbortSignal
+): Promise<{ threadId: string; thinking: string; answer: string }> => {
   const validatedData = ChatInputSchema.parse(input);
 
-  const { data } = await apiClient.post('/api/agents/chat', validatedData);
+  const url = `${baseURL.replace(/\/$/, '')}/api/agents/chat`;
 
-  return ChatResponseSchema.parse(data);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: JSON.stringify(validatedData),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Network error');
+    throw new Error(`Chat request failed with status ${response.status}: ${errorText}`);
+  }
+
+  if (!response.body) {
+    throw new Error('ReadableStream not supported in this browser environment.');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+
+  let threadId = '';
+  let thinking = '';
+  let answer = '';
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || !line.startsWith('data:')) continue;
+
+        const dataStr = line.slice(5).trim();
+        if (dataStr === '[DONE]') {
+          callbacks.onDone?.({ threadId, thinking, answer });
+          return { threadId, thinking, answer };
+        }
+
+        try {
+          const event = JSON.parse(dataStr) as StreamEvent;
+
+          if (event.type === 'metadata') {
+            threadId = event.threadId;
+            callbacks.onMetadata?.({ threadId: event.threadId });
+          } else if (event.type === 'thinking') {
+            thinking += event.content;
+            callbacks.onThinking?.(event.content, thinking);
+          } else if (event.type === 'answer') {
+            answer += event.content;
+            callbacks.onAnswer?.(event.content, answer);
+          } else if (event.type === 'error') {
+            callbacks.onError?.(event.error, event.details);
+            throw new Error(event.error || 'Unknown error occurred in agent stream');
+          }
+        } catch (parseError) {
+          if (parseError instanceof SyntaxError) {
+            console.warn('Failed to parse SSE JSON payload:', dataStr);
+          } else {
+            throw parseError;
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  callbacks.onDone?.({ threadId, thinking, answer });
+  return { threadId, thinking, answer };
+};
+
+export const chatWithAgent = async (
+  input: unknown
+): Promise<{ threadId: string; message: string; thinking?: string }> => {
+  const result = await chatWithAgentStream(input);
+  return {
+    threadId: result.threadId,
+    message: result.answer,
+    thinking: result.thinking,
+  };
 };
 
 export const getConversations = async (input: unknown = {}): Promise<GetConversationsResponse> => {

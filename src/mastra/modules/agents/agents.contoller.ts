@@ -5,7 +5,6 @@ import {
   GetConversationsInput,
   GetConversationInput,
   DeleteConversationInput,
-  ChatResponse,
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
@@ -19,19 +18,46 @@ export class AgentsController {
     this.agentsService = new AgentsService();
   }
 
-  async chat(
-    req: Request<Record<string, string>, ChatResponse | ErrorResponse, ChatInput>,
-    res: Response<ChatResponse | ErrorResponse>
-  ): Promise<void> {
-    try {
-      const result = await this.agentsService.chat(req.body);
-      res.status(200).json(result);
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        res.status(400).json({ error: error.message, details: error.issues });
-        return;
+  async chat(req: Request<Record<string, string>, any, ChatInput>, res: Response): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    let isAborted = false;
+    res.on('close', () => {
+      if (!res.writableEnded) {
+        isAborted = true;
       }
-      res.status(500).json({ error: 'Internal server error' });
+    });
+
+    try {
+      const stream = this.agentsService.chatStream(req.body);
+
+      for await (const event of stream) {
+        if (isAborted || res.destroyed || res.writableEnded) {
+          break;
+        }
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      }
+
+      if (!isAborted && !res.destroyed && !res.writableEnded) {
+        res.write('data: [DONE]\n\n');
+        res.end();
+      }
+    } catch (error) {
+      if (!isAborted && !res.destroyed && !res.writableEnded) {
+        if (error instanceof ValidationError) {
+          res.write(
+            `data: ${JSON.stringify({ type: 'error', error: error.message, details: error.issues })}\n\n`
+          );
+        } else {
+          res.write(
+            `data: ${JSON.stringify({ type: 'error', error: 'Internal server error' })}\n\n`
+          );
+        }
+        res.end();
+      }
     }
   }
 
