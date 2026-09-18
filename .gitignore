@@ -15,3 +15,6 @@ src/mastra/public/
 ./progress.json
 books
 data
+.svelte-kit
+**/.svelte-kit
+build

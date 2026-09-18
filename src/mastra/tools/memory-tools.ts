@@ -43,7 +43,6 @@ export const searchKnowledgeTool = createTool({
       return {
         success: true,
         results: rerankedResults,
-        hyDEUsed: useHyDE,
         candidatesEvaluated: rawResults.length,
       };
     } catch (error) {
