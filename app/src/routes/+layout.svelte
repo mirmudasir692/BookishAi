@@ -1,7 +1,7 @@
 <script lang="ts">
   import 'katex/dist/katex.min.css';
   import './layout.css';
-  import favicon from '$lib/assets/favicon.svg';
+  import favicon from '$lib/assets/bookishai.png';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -108,7 +108,8 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" href={favicon} />
+  <link rel="icon" type="image/png" href={favicon} />
+  <link rel="apple-touch-icon" href={favicon} />
   <title>Bookish AI - NCERT Science & Physics Tutor</title>
 </svelte:head>
 

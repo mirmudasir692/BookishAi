@@ -3,6 +3,7 @@
   import { Button } from '$lib/components/ui/button';
   import { renderMarkdown } from '$lib/markdown';
   import { parseMessageContent } from '$lib/message-parser';
+  import bookishLogo from '$lib/assets/bookishai.png';
   import {
     Sparkles,
     ChevronRight,
@@ -139,11 +140,11 @@
     </div>
   {:else}
     <div class="flex w-full items-start gap-3.5 px-2 sm:px-4">
-      <div
-        class="bg-primary text-primary-foreground flex size-7.5 shrink-0 items-center justify-center rounded-xl shadow-2xs"
-      >
-        <Sparkles class="size-4" />
-      </div>
+      <img
+        src={bookishLogo}
+        alt="Bookish AI"
+        class="size-7.5 shrink-0 rounded-xl object-contain shadow-2xs border border-border/40 bg-background p-0.5"
+      />
 
       <div class="flex min-w-0 flex-1 flex-col gap-2.5">
         <div class="flex items-center gap-2 text-xs">

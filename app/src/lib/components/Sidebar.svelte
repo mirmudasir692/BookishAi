@@ -5,6 +5,7 @@
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { Plus, Sparkles, AlertCircle, RefreshCw, X } from '@lucide/svelte';
+  import bookishLogo from '$lib/assets/bookishai.png';
 
   let {
     selectedThreadId,
@@ -57,11 +58,11 @@
 >
   <div class="flex items-center justify-between p-3.5 pb-2">
     <div class="flex items-center gap-2.5 px-1">
-      <div
-        class="bg-primary text-primary-foreground flex size-7.5 items-center justify-center rounded-lg shadow-2xs"
-      >
-        <Sparkles class="size-4" />
-      </div>
+      <img
+        src={bookishLogo}
+        alt="Bookish AI Logo"
+        class="size-7.5 shrink-0 rounded-lg object-contain shadow-2xs border border-border/40 bg-background"
+      />
       <div class="flex flex-col">
         <span class="text-foreground text-sm font-semibold tracking-tight">Bookish AI</span>
         <span class="text-muted-foreground/70 text-[10px]">NCERT & Science Tutor</span>

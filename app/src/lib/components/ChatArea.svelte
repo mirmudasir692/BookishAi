@@ -4,6 +4,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { chat } from '$lib/state/chat.svelte';
+  import bookishLogo from '$lib/assets/bookishai.png';
   import {
     Send,
     Sparkles,
@@ -47,6 +48,11 @@
         </Button>
       {/if}
       <div class="flex items-center gap-2">
+        <img
+          src={bookishLogo}
+          alt="Bookish AI"
+          class="size-6 shrink-0 rounded-md object-contain border border-border/40 bg-background"
+        />
         <span class="text-foreground text-sm font-semibold tracking-tight">Bookish AI</span>
         <span
           class="bg-primary/10 text-primary border-primary/20 hidden rounded-full border px-2 py-0.5 text-[10px] font-medium sm:inline-block"
@@ -81,11 +87,11 @@
         class="mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-4 py-12 text-center"
       >
         <div class="flex flex-col items-center space-y-6">
-          <div
-            class="bg-primary/10 text-primary border-primary/20 flex size-14 items-center justify-center rounded-2xl border shadow-sm"
-          >
-            <Sparkles class="size-7" />
-          </div>
+          <img
+            src={bookishLogo}
+            alt="Bookish AI Logo"
+            class="size-16 rounded-2xl object-contain shadow-sm border border-border/40 bg-background p-1"
+          />
 
           <div class="space-y-2">
             <h1 class="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
