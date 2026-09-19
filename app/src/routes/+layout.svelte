@@ -10,6 +10,7 @@
   import Sidebar from '$lib/components/Sidebar.svelte';
   import ChatArea from '$lib/components/ChatArea.svelte';
   import { Toaster, toast } from '$lib/components/ui/toast';
+  import { chat } from '$lib/state/chat.svelte';
 
   let { children } = $props();
 
@@ -54,12 +55,14 @@
     if (threadId) {
       goto(`/c/${threadId}`);
     } else {
+      chat.reset();
       goto('/');
     }
   }
 
   function handleNewChat() {
     isMobileSidebarOpen = false;
+    chat.reset();
     goto('/');
   }
 
@@ -79,6 +82,7 @@
       const res = await deleteConversation(threadId);
       conversations = conversations.filter((c) => c.id !== threadId);
       if (selectedThreadId === threadId) {
+        chat.reset();
         goto('/');
       }
       toast.success(res.message || 'Conversation deleted successfully');
@@ -90,7 +94,7 @@
   }
 
   async function handleThreadCreated(newThreadId: string) {
-    goto(`/c/${newThreadId}`, { replaceState: true, keepFocus: true });
+    goto(`/c/${newThreadId}`, { replaceState: true, noScroll: true, keepFocus: true });
     await fetchConversations();
   }
 

@@ -3,7 +3,7 @@
   import MessageBubble from '$lib/components/MessageBubble.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Skeleton } from '$lib/components/ui/skeleton';
-  import { ChatState } from '$lib/state/chat.svelte';
+  import { chat } from '$lib/state/chat.svelte';
   import {
     Send,
     Sparkles,
@@ -24,8 +24,6 @@
     onStartNewChat,
     onToggleMobileSidebar,
   }: ChatAreaProps = $props();
-
-  const chat = new ChatState();
 
   $effect(() => {
     chat.syncThread(selectedThreadId);

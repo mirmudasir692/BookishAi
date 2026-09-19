@@ -71,22 +71,37 @@ export class ChatState {
     }
   }
 
+  reset(): void {
+    this.stopGeneration();
+    this.messages = [];
+    this.inputQuery = '';
+    this.isLoadingHistory = false;
+    this.historyError = null;
+    this.sendError = null;
+    this.activeThreadId = null;
+    if (this.textareaRef) {
+      this.textareaRef.style.height = '44px';
+    }
+  }
+
   syncThread(selectedThreadId: string | null): void {
     if (selectedThreadId === this.activeThreadId) return;
 
-    this.activeThreadId = selectedThreadId;
-
-    if (selectedThreadId) {
-      if (!this.isSending) {
-        this.loadThread(selectedThreadId);
+    if (!selectedThreadId) {
+      if (!this.isSending && this.activeThreadId !== null) {
+        this.reset();
       }
-    } else {
-      if (!this.isSending) {
-        this.messages = [];
-        this.historyError = null;
-        this.sendError = null;
-      }
+      return;
     }
+
+    if (this.isSending) {
+      this.activeThreadId = selectedThreadId;
+      return;
+    }
+
+    this.stopGeneration();
+    this.activeThreadId = selectedThreadId;
+    this.loadThread(selectedThreadId);
   }
 
   stopGeneration(): void {
@@ -181,13 +196,20 @@ export class ChatState {
         payload.threadId = activeId;
       }
 
+      let createdThreadId: string | null = null;
+
       await chatWithAgentStream(
         payload,
         {
           onMetadata: (meta) => {
-            if (!activeId && meta.threadId) {
+            if (meta.threadId) {
               this.activeThreadId = meta.threadId;
-              onNewConversationCreated?.(meta.threadId);
+              if (!activeId) {
+                createdThreadId = meta.threadId;
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState(window.history.state, '', `/c/${meta.threadId}`);
+                }
+              }
             }
           },
           onThinking: (_chunk, accumulated) => {
@@ -214,6 +236,9 @@ export class ChatState {
               msg.id === botMessageId ? { ...msg, isThinking: false, isStreaming: false } : msg
             );
             this.scrollToBottom();
+            if (createdThreadId) {
+              onNewConversationCreated?.(createdThreadId);
+            }
           },
         },
         this.abortController.signal
@@ -275,17 +300,25 @@ export class ChatState {
       const payload: { query: string; threadId?: string } = {
         query,
       };
-      if (selectedThreadId) {
-        payload.threadId = selectedThreadId;
+      const activeId = selectedThreadId || this.activeThreadId;
+      if (activeId) {
+        payload.threadId = activeId;
       }
+
+      let createdThreadId: string | null = null;
 
       await chatWithAgentStream(
         payload,
         {
           onMetadata: (meta) => {
-            if (!selectedThreadId && meta.threadId) {
+            if (meta.threadId) {
               this.activeThreadId = meta.threadId;
-              onNewConversationCreated?.(meta.threadId);
+              if (!activeId) {
+                createdThreadId = meta.threadId;
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState(window.history.state, '', `/c/${meta.threadId}`);
+                }
+              }
             }
           },
           onThinking: (_chunk, accumulated) => {
@@ -312,6 +345,9 @@ export class ChatState {
               msg.id === botMessageId ? { ...msg, isThinking: false, isStreaming: false } : msg
             );
             this.scrollToBottom();
+            if (createdThreadId) {
+              onNewConversationCreated?.(createdThreadId);
+            }
           },
         },
         this.abortController.signal
@@ -355,3 +391,5 @@ export class ChatState {
     this.sendMessage(selectedThreadId, onNewConversationCreated);
   }
 }
+
+export const chat = new ChatState();

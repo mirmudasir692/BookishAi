@@ -4,7 +4,7 @@ import { generateText } from 'ai';
 import logger from '../../../utils/logger';
 import { mastra } from '../..';
 import { generateId } from '../../utils/helpers';
-import { chatModel } from '../../config/config';
+import { lightChatModel } from '../../config/config';
 import { prompts } from '../../utils/prompts';
 import {
   ChatInput,
@@ -54,7 +54,7 @@ export class AgentsService {
 
     logger.debug({ threadId: finalThreadId, userQuery }, 'Rewriting query for agent');
     const { text: query } = await generateText({
-      model: chatModel,
+      model: lightChatModel,
       prompt: prompts('QueryRewrite', userQuery),
     });
 

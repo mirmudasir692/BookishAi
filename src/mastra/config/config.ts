@@ -6,6 +6,7 @@ const ollama = createOllama({
 });
 
 export const chatModel = ollama.chat('qwen2.5:7b');
+export const lightChatModel = ollama.chat('qwen2.5:1.5b');
 export const embeddingModel = ollama.embedding('nomic-embed-text');
 export const rerankingModel = ollama.chat('qwen2.5:1.5b');
 export default ollama.chat('qwen2.5:1.5b');
