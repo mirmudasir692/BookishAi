@@ -9,6 +9,7 @@
   import { getConversations, deleteConversation } from '$lib/api/agents';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import ChatArea from '$lib/components/ChatArea.svelte';
+  import { Toaster, toast } from '$lib/components/ui/toast';
 
   let { children } = $props();
 
@@ -63,14 +64,28 @@
   }
 
   async function handleDeleteThread(threadId: string) {
+    const confirmed = await toast.confirm({
+      title: 'Delete Conversation',
+      message:
+        'Are you sure you want to delete this conversation? All messages will be permanently removed.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'destructive',
+    });
+
+    if (!confirmed) return;
+
     try {
-      await deleteConversation(threadId);
+      const res = await deleteConversation(threadId);
       conversations = conversations.filter((c) => c.id !== threadId);
       if (selectedThreadId === threadId) {
         goto('/');
       }
+      toast.success(res.message || 'Conversation deleted successfully');
     } catch (err: unknown) {
-      sidebarError = err instanceof Error ? err.message : 'Failed to delete conversation';
+      const msg = err instanceof Error ? err.message : 'Failed to delete conversation';
+      sidebarError = msg;
+      toast.error(msg);
     }
   }
 
@@ -115,5 +130,7 @@
     onToggleMobileSidebar={toggleMobileSidebar}
   />
 </div>
+
+<Toaster />
 
 {@render children?.()}

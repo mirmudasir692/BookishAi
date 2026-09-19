@@ -45,6 +45,12 @@ export const GetConversationResponseSchema = z.object({
 
 export const DeleteConversationResponseSchema = z.object({
   success: z.boolean(),
+  message: z.string().optional(),
+});
+
+export const DeleteMessageResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
 });
 
 export const ErrorResponseSchema = z.object({
@@ -57,6 +63,7 @@ export type Message = z.infer<typeof MessageSchema>;
 export type GetConversationsResponse = z.infer<typeof GetConversationsResponseSchema>;
 export type GetConversationResponse = z.infer<typeof GetConversationResponseSchema>;
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
+export type DeleteMessageResponse = z.infer<typeof DeleteMessageResponseSchema>;
 export type ErrorResponse = {
   error: string;
   details?: ZodIssue[];

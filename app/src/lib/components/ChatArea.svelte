@@ -101,7 +101,7 @@
           <div class="grid w-full grid-cols-1 gap-3 pt-2 text-left sm:grid-cols-2">
             <button
               type="button"
-              class="bg-card hover:bg-muted/50 border-border/80 flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
+              class="bg-card hover:bg-muted/50 border-border/80 flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
               onclick={() =>
                 chat.handleSuggestionClick(
                   'What is the Universal Law of Gravitation?',
@@ -124,7 +124,7 @@
 
             <button
               type="button"
-              class="bg-card hover:bg-muted/50 border-border/80 flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
+              class="bg-card hover:bg-muted/50 border-border/80 flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
               onclick={() =>
                 chat.handleSuggestionClick(
                   "Explain Newton's Laws of Motion with real examples",
@@ -147,7 +147,7 @@
 
             <button
               type="button"
-              class="bg-card hover:bg-muted/50 border-border/80 flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
+              class="bg-card hover:bg-muted/50 border-border/80 flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
               onclick={() =>
                 chat.handleSuggestionClick(
                   'Derive the kinematic equations of motion',
@@ -170,7 +170,7 @@
 
             <button
               type="button"
-              class="bg-card hover:bg-muted/50 border-border/80 flex items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
+              class="bg-card hover:bg-muted/50 border-border/80 flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-left transition-all hover:shadow-xs"
               onclick={() =>
                 chat.handleSuggestionClick(
                   'What is the difference between mass and weight?',
@@ -234,12 +234,17 @@
           <div class="space-y-6 pb-8 sm:space-y-8">
             {#each chat.messages as msg (msg.id)}
               <MessageBubble
+                id={msg.id}
                 role={msg.role}
                 content={msg.content}
                 thinking={msg.thinking}
                 isThinking={msg.isThinking}
                 isStreaming={msg.isStreaming}
                 createdAt={msg.createdAt}
+                onDelete={(id) => chat.deleteMessage(id)}
+                onRetry={(id) =>
+                  chat.retryAssistantMessage(id, selectedThreadId, onNewConversationCreated)}
+                isDeleting={chat.deletingMessageId === msg.id}
               />
             {/each}
           </div>

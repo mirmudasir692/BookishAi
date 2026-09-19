@@ -3,6 +3,9 @@ import {
   DeleteConversationInputSchema,
   type DeleteConversationResponse,
   DeleteConversationResponseSchema,
+  DeleteMessageInputSchema,
+  type DeleteMessageResponse,
+  DeleteMessageResponseSchema,
   GetConversationInputSchema,
   type GetConversationResponse,
   GetConversationResponseSchema,
@@ -139,4 +142,12 @@ export const deleteConversation = async (threadId: string): Promise<DeleteConver
   const { data } = await apiClient.delete(`/api/agents/conversations/${validatedData.threadId}`);
 
   return DeleteConversationResponseSchema.parse(data);
+};
+
+export const deleteMessage = async (messageId: string): Promise<DeleteMessageResponse> => {
+  const validatedData = DeleteMessageInputSchema.parse({ messageId });
+
+  const { data } = await apiClient.delete(`/api/agents/messages/${validatedData.messageId}`);
+
+  return DeleteMessageResponseSchema.parse(data);
 };

@@ -30,7 +30,7 @@
 >
   <button
     type="button"
-    class="flex w-full items-center gap-2.5 truncate px-3 py-2.5 pr-8 text-left text-xs font-normal select-none"
+    class="flex w-full cursor-pointer items-center gap-2.5 truncate px-3 py-2.5 pr-8 text-left text-xs font-normal select-none"
     onclick={handleSelect}
   >
     <MessageSquare class="size-3.5 shrink-0 opacity-70" />

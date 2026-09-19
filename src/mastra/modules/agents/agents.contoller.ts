@@ -6,9 +6,11 @@ import {
   GetConversationsInput,
   GetConversationInput,
   DeleteConversationInput,
+  DeleteMessageInput,
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
+  DeleteMessageResponse,
   ErrorResponse,
 } from '../../dto/agents';
 
@@ -123,6 +125,24 @@ export class AgentsController {
         return;
       }
       logger.error({ error }, 'Error in deleteConversation');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async deleteMessage(
+    req: Request<DeleteMessageInput, DeleteMessageResponse | ErrorResponse>,
+    res: Response<DeleteMessageResponse | ErrorResponse>
+  ): Promise<void> {
+    try {
+      const result = await this.agentsService.deleteMessage(req.params);
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        logger.warn({ error: error.issues }, 'Validation error in deleteMessage');
+        res.status(400).json({ error: error.message, details: error.issues });
+        return;
+      }
+      logger.error({ error }, 'Error in deleteMessage');
       res.status(500).json({ error: 'Internal server error' });
     }
   }

@@ -189,4 +189,36 @@ router.delete('/conversations/:threadId', (req, res) =>
   agentsController.deleteConversation(req, res)
 );
 
+/**
+ * @swagger
+ * /api/agents/messages/{messageId}:
+ *   delete:
+ *     summary: Delete a specific message
+ *     tags: [Agents]
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The unique identifier of the message to delete
+ *         example: "msg_12345"
+ *     responses:
+ *       200:
+ *         description: Message successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: Invalid message ID
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/messages/:messageId', (req, res) => agentsController.deleteMessage(req, res));
+
 export default router;

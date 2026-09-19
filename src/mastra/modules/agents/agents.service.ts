@@ -15,9 +15,12 @@ import {
   GetConversationInputSchema,
   DeleteConversationInput,
   DeleteConversationInputSchema,
+  DeleteMessageInput,
+  DeleteMessageInputSchema,
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
+  DeleteMessageResponse,
   StreamEvent,
   Message,
 } from '../../dto/agents';
@@ -146,6 +149,21 @@ export class AgentsService {
       await memory.deleteThread(threadId);
       logger.info({ threadId }, 'Conversation thread deleted');
     }
-    return { success: true };
+    return { success: true, message: 'Conversation deleted successfully' };
+  }
+
+  async deleteMessage(rawInput: DeleteMessageInput | unknown): Promise<DeleteMessageResponse> {
+    const validation = DeleteMessageInputSchema.safeParse(rawInput);
+    if (!validation.success) {
+      throw new ValidationError('Invalid input', validation.error.issues);
+    }
+
+    const { messageId } = validation.data;
+    const memory = await this.agent.getMemory();
+    if (memory) {
+      await memory.deleteMessages([messageId]);
+      logger.info({ messageId }, 'Message deleted');
+    }
+    return { success: true, message: 'Message deleted successfully' };
   }
 }

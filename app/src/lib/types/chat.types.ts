@@ -4,6 +4,7 @@ import type {
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
+  DeleteMessageResponse,
   StreamEvent,
 } from '../../../../src/mastra/dto';
 
@@ -13,6 +14,7 @@ export type {
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
+  DeleteMessageResponse,
   StreamEvent,
 };
 
@@ -57,12 +59,16 @@ export interface SidebarProps {
 }
 
 export interface MessageBubbleProps {
+  id: string;
   role: string;
   content: unknown;
   thinking?: string;
   isThinking?: boolean;
   isStreaming?: boolean;
   createdAt?: string | Date | null;
+  onDelete?: (id: string) => Promise<void> | void;
+  onRetry?: (id: string) => Promise<void> | void;
+  isDeleting?: boolean;
 }
 
 export interface ChatAreaProps {

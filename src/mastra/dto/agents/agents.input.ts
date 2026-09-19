@@ -19,7 +19,12 @@ export const DeleteConversationInputSchema = z.object({
   threadId: z.string().min(1, 'threadId is required'),
 });
 
+export const DeleteMessageInputSchema = z.object({
+  messageId: z.string().min(1, 'messageId is required'),
+});
+
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 export type GetConversationsInput = z.infer<typeof GetConversationsInputSchema>;
 export type GetConversationInput = z.infer<typeof GetConversationInputSchema>;
 export type DeleteConversationInput = z.infer<typeof DeleteConversationInputSchema>;
+export type DeleteMessageInput = z.infer<typeof DeleteMessageInputSchema>;

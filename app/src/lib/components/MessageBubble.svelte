@@ -3,15 +3,28 @@
   import { Button } from '$lib/components/ui/button';
   import { renderMarkdown } from '$lib/markdown';
   import { parseMessageContent } from '$lib/message-parser';
-  import { Sparkles, ChevronRight, BrainCircuit, Copy, Check } from '@lucide/svelte';
+  import {
+    Sparkles,
+    ChevronRight,
+    BrainCircuit,
+    Copy,
+    Check,
+    RotateCw,
+    Trash2,
+    Loader2,
+  } from '@lucide/svelte';
 
   let {
+    id,
     role,
     content,
     thinking = '',
     isThinking = false,
     isStreaming = false,
     createdAt,
+    onDelete,
+    onRetry,
+    isDeleting = false,
   }: MessageBubbleProps = $props();
 
   let userToggledOpen = $state<boolean | null>(null);
@@ -65,6 +78,14 @@
       console.error('Failed to copy text:', e);
     }
   }
+
+  function handleDelete() {
+    onDelete?.(id);
+  }
+
+  function handleRetry() {
+    onRetry?.(id);
+  }
 </script>
 
 <div class="group/msg relative w-full py-3 transition-colors">
@@ -76,9 +97,44 @@
         >
           {rawTextContent}
         </div>
-        {#if formattedTime}
-          <span class="text-muted-foreground/70 px-1 text-[11px]">{formattedTime}</span>
-        {/if}
+        <div class="flex items-center gap-2 px-1">
+          <div
+            class="flex items-center gap-1 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100"
+          >
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              class="text-muted-foreground hover:text-foreground size-6 rounded-md"
+              onclick={handleCopy}
+              aria-label="Copy message"
+            >
+              {#if isCopied}
+                <Check class="size-3 text-emerald-600 dark:text-emerald-400" />
+              {:else}
+                <Copy class="size-3" />
+              {/if}
+            </Button>
+            {#if onDelete}
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 size-6 rounded-md"
+                onclick={handleDelete}
+                disabled={isDeleting}
+                aria-label="Delete message"
+              >
+                {#if isDeleting}
+                  <Loader2 class="size-3 animate-spin" />
+                {:else}
+                  <Trash2 class="size-3" />
+                {/if}
+              </Button>
+            {/if}
+          </div>
+          {#if formattedTime}
+            <span class="text-muted-foreground/70 text-[11px]">{formattedTime}</span>
+          {/if}
+        </div>
       </div>
     </div>
   {:else}
@@ -178,6 +234,33 @@
                 <Copy class="size-3.5" />
               {/if}
             </Button>
+            {#if onRetry}
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                class="text-muted-foreground hover:text-foreground size-7.5 rounded-lg"
+                onclick={handleRetry}
+                aria-label="Retry response"
+              >
+                <RotateCw class="size-3.5" />
+              </Button>
+            {/if}
+            {#if onDelete}
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 size-7.5 rounded-lg"
+                onclick={handleDelete}
+                disabled={isDeleting}
+                aria-label="Delete message"
+              >
+                {#if isDeleting}
+                  <Loader2 class="size-3.5 animate-spin" />
+                {:else}
+                  <Trash2 class="size-3.5" />
+                {/if}
+              </Button>
+            {/if}
           </div>
         {/if}
       </div>
