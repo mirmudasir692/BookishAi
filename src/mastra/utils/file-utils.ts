@@ -1,4 +1,7 @@
 import { Buffer } from 'node:buffer';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import type { ZodIssue } from 'zod';
 import { ValidationError } from './error';
 import { objectClient } from '../modules/storage/bootstrap';
@@ -44,6 +47,7 @@ export interface StoredFile {
   contentType: string;
   size: number;
   url: string;
+  localPath?: string;
 }
 
 type StoreChatFilesArgs = {
@@ -96,6 +100,9 @@ export async function storeChatFiles({
       contentType: file.contentType,
     });
 
+    const tempPath = path.join(os.tmpdir(), `${Date.now()}-${safeName}`);
+    fs.writeFileSync(tempPath, file.buffer);
+
     const url = `${endpoint}/${config.bucket}/${key}`;
 
     storedFiles.push({
@@ -104,6 +111,7 @@ export async function storeChatFiles({
       contentType: file.contentType,
       size: file.buffer.length,
       url,
+      localPath: tempPath,
     });
   }
 

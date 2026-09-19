@@ -1,10 +1,7 @@
 import { Agent } from '@mastra/core/agent';
-import { generateText } from 'ai';
 import logger from '../../../utils/logger';
 import { mastra } from '../..';
 import { generateId } from '../../utils/helpers';
-import { lightChatModel } from '../../config/config';
-import { prompts } from '../../utils/prompts';
 import {
   ChatInput,
   ChatInputSchema,
@@ -27,6 +24,8 @@ import { parseMessageContent } from '../../utils/message-parser';
 import { IncomingFile } from 'src/mastra/types/utils.types';
 import { ValidationError } from 'src/mastra/utils/error';
 import { buildFileSummary, storeChatFiles } from 'src/mastra/utils/file-utils';
+import { extractPdfText } from '../../utils/document-ingestion';
+import { handleStreamEvents } from '../../utils/stream-utils';
 
 export class AgentsService {
   private agent: Agent;
@@ -53,6 +52,8 @@ export class AgentsService {
       jsonFiles: jsonFiles ?? [],
     });
 
+    const extractedPdfTexts: string[] = [];
+
     for (const sf of storedFiles) {
       logger.info(
         {
@@ -64,60 +65,53 @@ export class AgentsService {
         },
         `File received: ${sf.filename}, URL: ${sf.url}`
       );
+
+      if (sf.contentType === 'application/pdf' && sf.localPath) {
+        try {
+          const pdfText = await extractPdfText(sf.localPath);
+          extractedPdfTexts.push(`[Attached PDF Document (${sf.filename})]:\n${pdfText}`);
+          logger.info(
+            { filename: sf.filename, textLength: pdfText.length },
+            'Extracted PDF text for query context'
+          );
+        } catch (err) {
+          logger.warn({ filename: sf.filename, err }, 'Failed to extract text from PDF');
+        }
+      }
     }
 
     yield { type: 'metadata', threadId: finalThreadId };
 
-    let effectiveQuery = userQuery;
-    if (storedFiles.length > 0) {
-      effectiveQuery = `${userQuery}\n\n${buildFileSummary(storedFiles)}`;
+    const contextParts: string[] = [];
+
+    if (extractedPdfTexts.length > 0) {
+      contextParts.push(...extractedPdfTexts);
     }
 
-    logger.debug(
-      { threadId: finalThreadId, userQuery: effectiveQuery },
-      'Rewriting query for agent'
-    );
-    const { text: query } = await generateText({
-      model: lightChatModel,
-      prompt: prompts('QueryRewrite', effectiveQuery),
-    });
-    console.log('re written query', query);
+    const nonPdfFiles = storedFiles.filter((sf) => sf.contentType !== 'application/pdf');
+    if (nonPdfFiles.length > 0) {
+      contextParts.push(buildFileSummary(nonPdfFiles));
+    }
 
-    logger.debug(
-      { threadId: finalThreadId, rewrittenQuery: query },
-      'Streaming response from agent'
-    );
+    const isPlaceholderQuery = userQuery && /^\[Attached File: .*\]$/.test(userQuery.trim());
+    const validUserQuery = isPlaceholderQuery ? '' : (userQuery ?? '').trim();
+
+    let query = validUserQuery;
+
+    if (contextParts.length > 0) {
+      query =
+        validUserQuery !== ''
+          ? `${validUserQuery}\n\n${contextParts.join('\n\n')}`
+          : contextParts.join('\n\n');
+    }
+
+    logger.debug({ threadId: finalThreadId, query }, 'Streaming response from agent');
 
     const response = await this.agent.stream(query, {
       memory: { thread: finalThreadId, resource: 'anonymous' },
     });
 
-    for await (const chunk of response.fullStream) {
-      if (chunk.type === 'text-delta') {
-        yield { type: 'answer', content: chunk.payload.text };
-      } else if (chunk.type === 'reasoning-delta') {
-        yield { type: 'thinking', content: chunk.payload.text };
-      } else if (chunk.type === 'tool-call') {
-        const payload = chunk.payload as {
-          args?: { query?: string };
-          toolName?: string;
-        };
-        const queryArg = payload?.args?.query;
-        const msg = queryArg
-          ? `🔍 Searching knowledge base for "${queryArg}"...\n`
-          : `🔍 Calling tool ${payload?.toolName || 'search'}...\n`;
-        yield { type: 'thinking', content: msg };
-      } else if (chunk.type === 'tool-result') {
-        const payload = chunk.payload as { result?: { results?: unknown[] } };
-        const results = payload?.result?.results;
-        const count = Array.isArray(results) ? results.length : null;
-        const msg =
-          count !== null
-            ? `✅ Found ${count} relevant documents from library.\n\n`
-            : `✅ Search completed.\n\n`;
-        yield { type: 'thinking', content: msg };
-      }
-    }
+    yield* handleStreamEvents(response.fullStream);
   }
 
   async getConversations(

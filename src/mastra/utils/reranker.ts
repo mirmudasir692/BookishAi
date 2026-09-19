@@ -30,16 +30,28 @@ function cosineSimilarity(
   return dotProduct / (Math.sqrt(queryMagnitude) * Math.sqrt(documentMagnitude));
 }
 
+export type EmbeddingVector = number[] | Float32Array;
+
 export function rerankBySimilarity(
-  queryEmbedding: number[] | Float32Array,
+  queryEmbedding: EmbeddingVector | EmbeddingVector[],
   documents: LanceChunk[],
   limit: number
 ): LanceChunk[] {
+  const queryEmbeddings: EmbeddingVector[] =
+    Array.isArray(queryEmbedding[0]) || queryEmbedding[0] instanceof Float32Array
+      ? (queryEmbedding as EmbeddingVector[])
+      : [queryEmbedding as EmbeddingVector];
+
   return documents
-    .map((document) => ({
-      document,
-      score: cosineSimilarity(queryEmbedding, document.vector),
-    }))
+    .map((document) => {
+      const maxScore = Math.max(
+        ...queryEmbeddings.map((qEmb) => cosineSimilarity(qEmb, document.vector))
+      );
+      return {
+        document,
+        score: maxScore,
+      };
+    })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ document }) => document);
