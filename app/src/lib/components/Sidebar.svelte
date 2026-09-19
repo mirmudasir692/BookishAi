@@ -1,11 +1,10 @@
 <script lang="ts">
-  import type { SidebarProps } from '$lib/types/chat';
+  import type { SidebarProps } from '$lib/types/chat.types';
   import ConversationItem from '$lib/components/ConversationItem.svelte';
   import { Button } from '$lib/components/ui/button';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { Skeleton } from '$lib/components/ui/skeleton';
-  import { Separator } from '$lib/components/ui/separator';
-  import { Plus, Sparkles, AlertCircle, RefreshCw, X, MessageSquarePlus } from '@lucide/svelte';
+  import { Plus, Sparkles, AlertCircle, RefreshCw, X } from '@lucide/svelte';
 
   let {
     selectedThreadId,
@@ -42,7 +41,6 @@
   }
 </script>
 
-<!-- Backdrop overlay for mobile drawer -->
 {#if isOpenMobile}
   <button
     type="button"
@@ -57,7 +55,6 @@
     ? 'translate-x-0 shadow-2xl'
     : '-translate-x-full'}"
 >
-  <!-- Header with Brand & Close Button (on mobile) -->
   <div class="flex items-center justify-between p-3.5 pb-2">
     <div class="flex items-center gap-2.5 px-1">
       <div
@@ -98,7 +95,6 @@
     </div>
   </div>
 
-  <!-- New Chat Action -->
   <div class="px-3 py-2">
     <Button
       variant="outline"
@@ -109,9 +105,9 @@
         <Plus class="size-4" />
         <span>New Chat</span>
       </div>
-      <span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[10px]"
-        >⌘K</span
-      >
+      <span class="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 font-mono text-[10px]">
+        ⌘K
+      </span>
     </Button>
   </div>
 
@@ -124,7 +120,6 @@
     {/if}
   </div>
 
-  <!-- Conversations List -->
   <div class="min-h-0 flex-1 overflow-hidden">
     <ScrollArea class="h-full px-2.5">
       {#if isLoading && conversations.length === 0}
@@ -164,7 +159,6 @@
     </ScrollArea>
   </div>
 
-  <!-- Footer status -->
   <div class="border-border/60 bg-muted/20 border-t p-3">
     <div class="flex items-center justify-between px-1 text-xs">
       <div class="flex items-center gap-2">

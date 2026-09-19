@@ -1,10 +1,8 @@
 import * as lancedb from '@lancedb/lancedb';
-import { CreateChunkInput, CreateChunkOutput } from '../../types/chunk.types';
-import { ChunkOutput } from '../../types/chunk.types';
+import { CreateChunkInput, CreateChunkOutput, LanceChunk } from '../../types/chunk.types';
 import { getLanceDbPath } from '../../utils/helpers';
 
 const DB_PATH = getLanceDbPath();
-console.log(`[DEBUG] Calculated LanceDB Path: ${DB_PATH}`);
 const TABLE_NAME = 'chunks';
 
 class ChunkRepository {
@@ -16,43 +14,43 @@ class ChunkRepository {
     try {
       const db = await lancedb.connect(DB_PATH);
 
-      const lanceData = chunks.map((chunk) => ({
+      const lanceData: LanceChunk[] = chunks.map((chunk) => ({
         id: crypto.randomUUID(),
         text: chunk.text,
         vector: new Float32Array(chunk.vector),
-        metadata: chunk.metadata,
+        metadata: chunk.metadata as Record<string, unknown>,
         chunkIndex: chunk.chunkIndex,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }));
 
       const tableNames = await db.tableNames();
-      let table;
 
       if (tableNames.includes(TABLE_NAME)) {
-        table = await db.openTable(TABLE_NAME);
+        const table = await db.openTable(TABLE_NAME);
         await table.add(lanceData);
       } else {
-        table = await db.createTable(TABLE_NAME, lanceData);
+        await db.createTable(TABLE_NAME, lanceData);
       }
 
-      console.log(`✅ Inserted ${lanceData.length} chunks into LanceDB.`);
-      return lanceData as any as CreateChunkOutput;
+      return lanceData;
     } catch (error) {
-      console.error('Error in ChunkRepository.addMany:', error);
       throw new Error('Failed to insert chunks into LanceDB.', { cause: error });
     }
   }
-  public async search(queryVector: number[], limit: number = 5): Promise<ChunkOutput[]> {
+
+  public async search(queryVector: number[], limit: number = 5): Promise<LanceChunk[]> {
     try {
       const db = await lancedb.connect(DB_PATH);
       const table = await db.openTable(TABLE_NAME);
 
-      const results = await table.search(new Float32Array(queryVector)).limit(limit).toArray();
+      const results = (await table
+        .search(new Float32Array(queryVector))
+        .limit(limit)
+        .toArray()) as unknown as LanceChunk[];
 
       return results;
     } catch (error) {
-      console.error('Error in ChunkRepository.search:', error);
       throw new Error('Failed to search chunks in LanceDB.', { cause: error });
     }
   }

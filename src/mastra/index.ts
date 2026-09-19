@@ -12,7 +12,6 @@ export const mastra = new Mastra({
   },
   memory: { memory },
   storage: storage,
-
   agents: { agent },
   observability: new Observability({
     configs: {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ConversationItemProps } from '$lib/types/chat';
+  import type { ConversationItemProps } from '$lib/types/chat.types';
   import { Button } from '$lib/components/ui/button';
   import { Trash2, MessageSquare, Loader2 } from '@lucide/svelte';
 

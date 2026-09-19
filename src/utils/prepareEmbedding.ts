@@ -1,4 +1,7 @@
-const prepareEmbedding = (chunks: { text: string }[], embeddings: number[][]) => {
+const prepareEmbedding = (
+  chunks: { text: string }[],
+  embeddings: number[][]
+): { text: string; embedding: number[] }[] => {
   return chunks.map((chunk, index) => {
     const vec = embeddings[index];
     return {

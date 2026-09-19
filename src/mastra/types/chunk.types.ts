@@ -7,16 +7,19 @@ export interface LanceChunk extends Record<string, unknown> {
   createdAt: string;
   updatedAt: string;
 }
+
 export interface IChunkMetadata {
   source: string;
   grade?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
+
 export interface CreateChunkInput {
   text: string;
   vector: number[];
   metadata: IChunkMetadata;
   chunkIndex: number;
 }
-export type ChunkOutput = LanceChunk[];
+
+export type ChunkOutput = LanceChunk;
 export type CreateChunkOutput = LanceChunk[];

@@ -3,7 +3,6 @@ import { CreateChunkInput } from '../../types/chunk.types';
 import { getLanceDbPath } from '../../utils/helpers';
 
 const DB_PATH = getLanceDbPath();
-console.log(`[DEBUG] LanceDB Path (Model): ${DB_PATH}`);
 const TABLE_NAME = 'chunks';
 
 export class ChunkModel {
@@ -24,7 +23,7 @@ export class ChunkModel {
       id: crypto.randomUUID(),
       text: chunk.text,
       vector: new Float32Array(chunk.vector),
-      metadata: chunk.metadata,
+      metadata: chunk.metadata as Record<string, unknown>,
       chunkIndex: chunk.chunkIndex,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

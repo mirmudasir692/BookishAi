@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MessageBubbleProps } from '$lib/types/chat';
+  import type { MessageBubbleProps } from '$lib/types/chat.types';
   import { Button } from '$lib/components/ui/button';
   import { renderMarkdown } from '$lib/markdown';
   import { parseMessageContent } from '$lib/message-parser';
@@ -69,7 +69,6 @@
 
 <div class="group/msg relative w-full py-3 transition-colors">
   {#if isUser}
-    <!-- User Message: Distinct rounded bubble with clear separation -->
     <div class="flex w-full justify-end px-2 sm:px-4">
       <div class="flex max-w-[85%] flex-col items-end gap-1.5 sm:max-w-[75%]">
         <div
@@ -83,7 +82,6 @@
       </div>
     </div>
   {:else}
-    <!-- Assistant Message: Clean ChatGPT flowing response with crisp black text -->
     <div class="flex w-full items-start gap-3.5 px-2 sm:px-4">
       <div
         class="bg-primary text-primary-foreground flex size-7.5 shrink-0 items-center justify-center rounded-xl shadow-2xs"
@@ -103,7 +101,6 @@
           {/if}
         </div>
 
-        <!-- Collapsible Thinking / Reasoning Block -->
         {#if effectiveThinking || isThinking}
           <div
             class="bg-muted/40 border-border/80 my-1 overflow-hidden rounded-2xl border text-xs transition-all"
@@ -146,10 +143,8 @@
           </div>
         {/if}
 
-        <!-- Assistant Response Body (Rendered Markdown with Crisp Contrast) -->
         {#if rawTextContent}
           <div class="prose text-foreground max-w-none text-[15px] leading-7 break-words">
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
             {@html formattedHtml}
             {#if isStreaming && !isThinking}
               <span class="bg-primary ml-1 inline-block h-4.5 w-1.5 animate-pulse align-middle"
@@ -166,7 +161,6 @@
           </div>
         {/if}
 
-        <!-- Message Actions (Copy response) -->
         {#if rawTextContent && !isStreaming}
           <div
             class="flex items-center gap-1 pt-1.5 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100"

@@ -1,10 +1,14 @@
-import { z, ZodIssue } from 'zod';
+import { z, type ZodIssue } from 'zod';
 
 export const StreamEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('metadata'), threadId: z.string() }),
   z.object({ type: z.literal('thinking'), content: z.string() }),
   z.object({ type: z.literal('answer'), content: z.string() }),
-  z.object({ type: z.literal('error'), error: z.string(), details: z.array(z.any()).optional() }),
+  z.object({
+    type: z.literal('error'),
+    error: z.string(),
+    details: z.array(z.unknown()).optional(),
+  }),
 ]);
 
 export type StreamEvent = z.infer<typeof StreamEventSchema>;
@@ -25,7 +29,7 @@ export const GetConversationsResponseSchema = z.array(ThreadSchema);
 export const MessageSchema = z
   .object({
     id: z.string(),
-    role: z.enum(['user', 'assistant', 'system', 'tool', 'signal']).or(z.string()),
+    role: z.string(),
     content: z.unknown(),
     thinking: z.string().nullish(),
     createdAt: z.union([z.string(), z.date()]).nullish(),

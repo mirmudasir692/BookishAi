@@ -5,7 +5,6 @@ const DB_PATH = getLanceDbPath();
 
 export async function getLanceTable(tableName: string = 'chunks') {
   const db = await lancedb.connect(DB_PATH);
-
   const tableNames = await db.listTables();
 
   if (!tableNames.tables.includes(tableName)) {
@@ -15,8 +14,10 @@ export async function getLanceTable(tableName: string = 'chunks') {
   return await db.openTable(tableName);
 }
 
-export async function createLanceTable(tableName: string = 'chunks', data: any[]) {
+export async function createLanceTable(
+  tableName: string = 'chunks',
+  data: Record<string, unknown>[]
+) {
   const db = await lancedb.connect(DB_PATH);
-
   return await db.createTable(tableName, data);
 }

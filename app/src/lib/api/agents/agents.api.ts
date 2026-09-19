@@ -11,15 +11,10 @@ import {
   GetConversationsResponseSchema,
   type StreamEvent,
 } from '../../../../../src/mastra/dto';
+import type { ChatStreamCallbacks } from '$lib/types/chat.types';
 import { apiClient, baseURL } from '../client';
 
-export interface ChatStreamCallbacks {
-  onMetadata?: (data: { threadId: string }) => void;
-  onThinking?: (chunk: string, accumulated: string) => void;
-  onAnswer?: (chunk: string, accumulated: string) => void;
-  onError?: (error: string, details?: unknown[]) => void;
-  onDone?: (finalResult: { threadId: string; thinking: string; answer: string }) => void;
-}
+export type { ChatStreamCallbacks };
 
 export const chatWithAgentStream = async (
   input: unknown,

@@ -17,7 +17,10 @@ import {
   GetConversationsResponse,
   GetConversationResponse,
   DeleteConversationResponse,
+  StreamEvent,
+  Message,
 } from '../../dto/agents';
+import { parseMessageContent } from '../../utils/message-parser';
 
 export class ValidationError extends Error {
   public issues: ZodIssue[];
@@ -27,13 +30,6 @@ export class ValidationError extends Error {
     this.issues = issues;
   }
 }
-type StreamEvent =
-  | { type: 'metadata'; threadId: string }
-  | { type: 'thinking'; content: string }
-  | { type: 'answer'; content: string }
-  | { type: 'error'; error: string; details?: any[] };
-
-import { parseMessageContent } from '../../utils/message-parser';
 
 export class AgentsService {
   private agent: Agent;
@@ -85,6 +81,7 @@ export class AgentsService {
       }
     }
   }
+
   async getConversations(
     rawInput?: GetConversationsInput | unknown
   ): Promise<GetConversationsResponse> {
@@ -113,7 +110,7 @@ export class AgentsService {
     if (!memory) return { threadId, messages: [] };
 
     const result = await memory.recall({ threadId });
-    const rawMessages = (result?.messages as unknown as any[]) || [];
+    const rawMessages = (result?.messages as unknown as Message[]) || [];
     const normalizedMessages = rawMessages.map((msg) => {
       const parsed = parseMessageContent(msg.content ?? msg);
       return {
@@ -125,7 +122,7 @@ export class AgentsService {
 
     return {
       threadId,
-      messages: normalizedMessages as GetConversationResponse['messages'],
+      messages: normalizedMessages,
     };
   }
 

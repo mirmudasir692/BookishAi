@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import type { Thread } from '$lib/types/chat';
+  import type { Thread } from '$lib/types/chat.types';
   import { getConversations, deleteConversation } from '$lib/api/agents';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import ChatArea from '$lib/components/ChatArea.svelte';

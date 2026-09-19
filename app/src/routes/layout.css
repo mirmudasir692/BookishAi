@@ -81,7 +81,6 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
-  /* Thin aesthetic scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -104,12 +103,11 @@
   }
 }
 
-/* Enhanced Markdown styling with pure crisp contrast */
 .prose {
   color: var(--foreground) !important;
   font-family: inherit;
-  font-size: 0.9375rem; /* 15px */
-  line-height: 1.75; /* 28px leading */
+  font-size: 0.9375rem;
+  line-height: 1.75;
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);
   --tw-prose-lead: var(--foreground);

@@ -5,6 +5,7 @@ import { embeddingModel, rerankingModel } from '../config/config';
 import { chunkRepository } from '../database/repositories/ChunkRepository';
 import { prompts } from '../utils/prompts';
 import { cleanupText } from '../utils/helpers';
+import { LanceChunk } from '../types/chunk.types';
 
 export const searchKnowledgeTool = createTool({
   id: 'search-knowledge',
@@ -27,18 +28,17 @@ export const searchKnowledgeTool = createTool({
       if (rawResults.length === 0) {
         return { success: true, results: [], message: 'No relevant documents found.' };
       }
-      console.log(`⚖️ [Phase 3] Asking Qwen to rerank ${rawResults.length} candidates...`);
+
       const docsForPrompt = rawResults
-        .map((r: any, index: number) => `[Document ${index}]: ${r.text}`)
+        .map((r: LanceChunk, index: number) => `[Document ${index}]: ${r.text}`)
         .join('\n\n');
       const { text: rankedIndicesStr } = await generateText({
         model: rerankingModel,
         prompt: prompts('Rerank', { query, documents: docsForPrompt }),
         temperature: 0,
       });
-      console.log('rankedIndicesStr', rankedIndicesStr);
+
       const rerankedResults = cleanupText(query, rankedIndicesStr, rawResults, limit);
-      console.log(`[Complete] Returning top ${rerankedResults.length} reranked results.`);
 
       return {
         success: true,

@@ -1,4 +1,10 @@
-export const prompts = (type: 'QueryRewrite' | 'Rerank' | 'SystemPrompt', data: any): string => {
+export type PromptDataMap = {
+  QueryRewrite: string;
+  Rerank: { query: string; documents: string };
+  SystemPrompt: unknown;
+};
+
+export function prompts<T extends keyof PromptDataMap>(type: T, data: PromptDataMap[T]): string {
   switch (type) {
     case 'QueryRewrite':
       return `You are an expert physics search engine optimizer. Your task is to transform a user's physics question into a highly optimized, keyword-dense search query to retrieve exact formulas, definitions, and derivations from a textbook.
@@ -15,11 +21,13 @@ Rules:
 - If the question is purely conceptual, append keywords like "definition theoretical principles laws general concept".
 - Ensure the query targets the EXACT phenomenon name, not just general related topics.
 
-Input: "${data}"
+Input: "${data as string}"
 Optimized Search Query:`;
 
-    case 'Rerank':
-      return `You are a document relevance ranking system. Your task is to rank the provided documents according to how relevant they are to the user's original query. Evaluate relevance based on semantic meaning, factual coverage, terminology, entities, concepts, relationships, and how directly each document can help answer the query. Prefer documents that contain specific information needed to answer the query over documents that are only loosely related or share similar keywords. Consider semantic relevance rather than simple keyword overlap. Return ONLY a comma-separated list of document indices ordered from MOST relevant to LEAST relevant. Do not provide explanations, reasoning, markdown, labels, scores, or any other text. Every valid document index should appear at most once. Query: ${data.query} Documents: ${data.documents} Output only the ranked document indices:`;
+    case 'Rerank': {
+      const payload = data as { query: string; documents: string };
+      return `You are a document relevance ranking system. Your task is to rank the provided documents according to how relevant they are to the user's original query. Evaluate relevance based on semantic meaning, factual coverage, terminology, entities, concepts, relationships, and how directly each document can help answer the query. Prefer documents that contain specific information needed to answer the query over documents that are only loosely related or share similar keywords. Consider semantic relevance rather than simple keyword overlap. Return ONLY a comma-separated list of document indices ordered from MOST relevant to LEAST relevant. Do not provide explanations, reasoning, markdown, labels, scores, or any other text. Every valid document index should appear at most once. Query: ${payload.query} Documents: ${payload.documents} Output only the ranked document indices:`;
+    }
 
     case 'SystemPrompt':
       return `You are BookishAI, a retrieval-only AI tutor for NCERT Physics.
@@ -47,6 +55,6 @@ If the user's query contains specific numbers, variables, or a word problem:
 If the tool returns empty results, reply EXACTLY: "I couldn't find this in my database." DO NOT attempt to guess.`;
 
     default:
-      throw new Error(`Unknown prompt type: ${type}`);
+      throw new Error(`Unknown prompt type: ${String(type)}`);
   }
-};
+}

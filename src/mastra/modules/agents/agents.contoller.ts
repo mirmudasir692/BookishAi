@@ -18,7 +18,7 @@ export class AgentsController {
     this.agentsService = new AgentsService();
   }
 
-  async chat(req: Request<Record<string, string>, any, ChatInput>, res: Response): Promise<void> {
+  async chat(req: Request<Record<string, string>, void, ChatInput>, res: Response): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
