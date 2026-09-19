@@ -12,3 +12,5 @@ declare module '*.svelte.ts' {
   const content: Record<string, unknown>;
   export default content;
 }
+
+declare module 's3rver';
