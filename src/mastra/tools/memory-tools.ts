@@ -1,12 +1,11 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { embed, generateText } from 'ai';
+import { embed } from 'ai';
 import logger from '../../utils/logger';
-import { embeddingModel, rerankingModel } from '../config/config';
+import { embeddingModel } from '../config/config';
 import { chunkRepository } from '../database/repositories/ChunkRepository';
-import { prompts } from '../utils/prompts';
-import { cleanupText } from '../utils/helpers';
 import { LanceChunk } from '../types/chunk.types';
+import { rerankBySimilarity } from '../utils/reranker';
 
 export const searchKnowledgeTool = createTool({
   id: 'search-knowledge',
@@ -33,17 +32,14 @@ export const searchKnowledgeTool = createTool({
       const docsForPrompt = rawResults
         .map((r: LanceChunk, index: number) => `[Document ${index}]: ${r.text}`)
         .join('\n\n');
-      const { text: rankedIndicesStr } = await generateText({
-        model: rerankingModel,
-        prompt: prompts('Rerank', { query, documents: docsForPrompt }),
-        temperature: 0,
-      });
-
-      const rerankedResults = cleanupText(query, rankedIndicesStr, rawResults, limit);
+      console.log('docs for prompt', docsForPrompt);
+      const rerankedResults = rerankBySimilarity(embedding, rawResults, limit);
+      const cleanResults = rerankedResults.map(({ vector: _v, ...rest }) => rest);
+      console.log('reranked results', cleanResults);
 
       return {
         success: true,
-        results: rerankedResults,
+        results: cleanResults,
         candidatesEvaluated: rawResults.length,
       };
     } catch (error) {
