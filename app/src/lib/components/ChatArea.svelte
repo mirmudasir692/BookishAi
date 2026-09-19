@@ -314,7 +314,7 @@
                 <img
                   src={chat.selectedFile.previewUrl}
                   alt={chat.selectedFile.name}
-                  class="size-12 rounded-xl border border-border/40 object-cover"
+                  class="border-border/40 size-12 rounded-xl border object-cover"
                 />
               {:else}
                 <div

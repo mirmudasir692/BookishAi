@@ -67,7 +67,7 @@ export class ChatState {
         isImage,
         size: file.size,
       };
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       toast.error('Failed to process file');
     }
   }
