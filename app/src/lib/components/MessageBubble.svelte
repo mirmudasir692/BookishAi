@@ -143,7 +143,7 @@
       <img
         src={bookishLogo}
         alt="Bookish AI"
-        class="size-7.5 shrink-0 rounded-xl object-contain shadow-2xs border border-border/40 bg-background p-0.5"
+        class="border-border/40 bg-background size-7.5 shrink-0 rounded-xl border object-contain p-0.5 shadow-2xs"
       />
 
       <div class="flex min-w-0 flex-1 flex-col gap-2.5">

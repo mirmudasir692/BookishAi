@@ -51,7 +51,7 @@
         <img
           src={bookishLogo}
           alt="Bookish AI"
-          class="size-6 shrink-0 rounded-md object-contain border border-border/40 bg-background"
+          class="border-border/40 bg-background size-6 shrink-0 rounded-md border object-contain"
         />
         <span class="text-foreground text-sm font-semibold tracking-tight">Bookish AI</span>
         <span
@@ -90,7 +90,7 @@
           <img
             src={bookishLogo}
             alt="Bookish AI Logo"
-            class="size-16 rounded-2xl object-contain shadow-sm border border-border/40 bg-background p-1"
+            class="border-border/40 bg-background size-16 rounded-2xl border object-contain p-1 shadow-sm"
           />
 
           <div class="space-y-2">

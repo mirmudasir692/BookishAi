@@ -61,7 +61,7 @@
       <img
         src={bookishLogo}
         alt="Bookish AI Logo"
-        class="size-7.5 shrink-0 rounded-lg object-contain shadow-2xs border border-border/40 bg-background"
+        class="border-border/40 bg-background size-7.5 shrink-0 rounded-lg border object-contain shadow-2xs"
       />
       <div class="flex flex-col">
         <span class="text-foreground text-sm font-semibold tracking-tight">Bookish AI</span>
