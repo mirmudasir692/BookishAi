@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import logger from '../../../utils/logger';
 import { AgentsService, ValidationError } from './agents.service';
 import {
   ChatInput,
@@ -46,6 +47,12 @@ export class AgentsController {
         res.end();
       }
     } catch (error) {
+      if (error instanceof ValidationError) {
+        logger.warn({ error: error.issues }, 'Validation error in chat');
+      } else {
+        logger.error({ error }, 'Error in chat stream');
+      }
+
       if (!isAborted && !res.destroyed && !res.writableEnded) {
         if (error instanceof ValidationError) {
           res.write(
@@ -75,9 +82,11 @@ export class AgentsController {
       res.status(200).json(result);
     } catch (error) {
       if (error instanceof ValidationError) {
+        logger.warn({ error: error.issues }, 'Validation error in getConversations');
         res.status(400).json({ error: error.message, details: error.issues });
         return;
       }
+      logger.error({ error }, 'Error in getConversations');
       res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -91,9 +100,11 @@ export class AgentsController {
       res.status(200).json(result);
     } catch (error) {
       if (error instanceof ValidationError) {
+        logger.warn({ error: error.issues }, 'Validation error in getConversation');
         res.status(400).json({ error: error.message, details: error.issues });
         return;
       }
+      logger.error({ error }, 'Error in getConversation');
       res.status(500).json({ error: 'Internal server error' });
     }
   }
@@ -107,9 +118,11 @@ export class AgentsController {
       res.status(200).json(result);
     } catch (error) {
       if (error instanceof ValidationError) {
+        logger.warn({ error: error.issues }, 'Validation error in deleteConversation');
         res.status(400).json({ error: error.message, details: error.issues });
         return;
       }
+      logger.error({ error }, 'Error in deleteConversation');
       res.status(500).json({ error: 'Internal server error' });
     }
   }

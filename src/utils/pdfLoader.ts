@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import logger from './logger';
 import { parsePdf } from './pdfParser';
 import { ProgressState } from '../mastra/types/utils.types';
 import { MDocument } from '@mastra/rag';
@@ -104,5 +105,5 @@ export async function loadBooksSequentially() {
 }
 
 loadBooksSequentially().catch((err) => {
-  console.error('Error loading books:', err);
+  logger.error({ err }, 'Error loading books');
 });

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, renameSync, rmSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import { getProjectRoot } from '../mastra/utils/helpers';
+import logger from './logger';
 
 const DATASET_REPO = 'mudasir692/bookishai-data';
 
@@ -37,7 +38,7 @@ export async function ensureDataSynced(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Failed to download dataset from Hugging Face:', error);
+    logger.error({ error }, 'Failed to download dataset from Hugging Face');
     process.exit(1);
   } finally {
     try {

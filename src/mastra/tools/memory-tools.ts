@@ -1,6 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { embed, generateText } from 'ai';
+import logger from '../../utils/logger';
 import { embeddingModel, rerankingModel } from '../config/config';
 import { chunkRepository } from '../database/repositories/ChunkRepository';
 import { prompts } from '../utils/prompts';
@@ -46,7 +47,7 @@ export const searchKnowledgeTool = createTool({
         candidatesEvaluated: rawResults.length,
       };
     } catch (error) {
-      console.error('Error in searchKnowledgeTool:', error);
+      logger.error({ error }, 'Error in searchKnowledgeTool');
       return { success: false, message: 'An error occurred while searching knowledge.' };
     }
   },

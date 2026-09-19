@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { ZodIssue } from 'zod';
 import { generateText } from 'ai';
+import logger from '../../../utils/logger';
 import { mastra } from '../..';
 import { generateId } from '../../utils/helpers';
 import { chatModel } from '../../config/config';
@@ -48,11 +49,16 @@ export class AgentsService {
     const finalThreadId = threadId || generateId();
     yield { type: 'metadata', threadId: finalThreadId };
 
+    logger.debug({ threadId: finalThreadId, userQuery }, 'Rewriting query for agent');
     const { text: query } = await generateText({
       model: chatModel,
       prompt: prompts('QueryRewrite', userQuery),
     });
 
+    logger.debug(
+      { threadId: finalThreadId, rewrittenQuery: query },
+      'Streaming response from agent'
+    );
     const response = await this.agent.stream(query, {
       memory: { thread: finalThreadId, resource: 'anonymous' },
     });
@@ -138,6 +144,7 @@ export class AgentsService {
     const memory = await this.agent.getMemory();
     if (memory) {
       await memory.deleteThread(threadId);
+      logger.info({ threadId }, 'Conversation thread deleted');
     }
     return { success: true };
   }

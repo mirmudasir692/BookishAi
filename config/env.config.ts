@@ -9,6 +9,7 @@ const envSchema = z.object({
   MASTRA_PLATFORM_ACCESS_TOKEN: z.string().min(1, 'MASTRA_PLATFORM_ACCESS_TOKEN is required'),
   MASTRA_PROJECT_ID: z.string().min(1, 'MASTRA_PROJECT_ID is required'),
   VITE_API_BASE_URL: z.url('VITE_API_BASE_URL must be a valid URL'),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -21,6 +22,7 @@ const validateEnv = (): Env => {
     MASTRA_PLATFORM_ACCESS_TOKEN: process.env.MASTRA_PLATFORM_ACCESS_TOKEN ?? '',
     MASTRA_PROJECT_ID: process.env.MASTRA_PROJECT_ID ?? '',
     VITE_API_BASE_URL: process.env.VITE_API_BASE_URL ?? '',
+    NODE_ENV: process.env.NODE_ENV ?? 'development',
   };
 
   try {
