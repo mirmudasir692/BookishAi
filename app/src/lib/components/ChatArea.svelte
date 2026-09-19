@@ -17,6 +17,9 @@
     Plus,
     Square,
     ArrowDown,
+    Paperclip,
+    X,
+    FileText,
   } from '@lucide/svelte';
 
   let {
@@ -25,6 +28,8 @@
     onStartNewChat,
     onToggleMobileSidebar,
   }: ChatAreaProps = $props();
+
+  let fileInputRef = $state<HTMLInputElement | null>(null);
 
   $effect(() => {
     chat.syncThread(selectedThreadId);
@@ -298,43 +303,114 @@
           e.preventDefault();
           chat.sendMessage(selectedThreadId, onNewConversationCreated);
         }}
-        class="bg-muted/40 focus-within:bg-background focus-within:border-primary/40 focus-within:ring-primary/10 border-border/80 relative flex items-end gap-2 rounded-3xl border p-1.5 shadow-xs transition-all focus-within:ring-3"
+        class="bg-muted/40 focus-within:bg-background focus-within:border-primary/40 focus-within:ring-primary/10 border-border/80 relative flex flex-col rounded-3xl border p-1.5 shadow-xs transition-all focus-within:ring-3"
       >
-        <textarea
-          bind:this={chat.textareaRef}
-          bind:value={chat.inputQuery}
-          oninput={() => chat.adjustTextareaHeight()}
-          onkeydown={(e) => chat.handleKeydown(e, selectedThreadId, onNewConversationCreated)}
-          placeholder="Ask anything about NCERT Science & Physics..."
-          rows={1}
-          class="text-foreground placeholder:text-muted-foreground/70 max-h-48 min-h-[44px] flex-1 resize-none bg-transparent px-3.5 py-2.5 text-sm leading-relaxed outline-none"
-        ></textarea>
+        {#if chat.selectedFile}
+          <div class="px-3 pt-2 pb-1">
+            <div
+              class="border-border/80 bg-background/95 relative inline-flex items-center gap-2.5 rounded-2xl border p-1.5 pr-3 shadow-xs backdrop-blur-xs"
+            >
+              {#if chat.selectedFile.isImage && chat.selectedFile.previewUrl}
+                <img
+                  src={chat.selectedFile.previewUrl}
+                  alt={chat.selectedFile.name}
+                  class="size-12 rounded-xl border border-border/40 object-cover"
+                />
+              {:else}
+                <div
+                  class="bg-primary/10 text-primary border-primary/20 flex size-12 items-center justify-center rounded-xl border"
+                >
+                  <FileText class="size-6" />
+                </div>
+              {/if}
+              <div class="flex min-w-0 flex-col pr-1">
+                <span
+                  class="text-foreground max-w-[180px] truncate text-xs font-semibold sm:max-w-[240px]"
+                >
+                  {chat.selectedFile.name}
+                </span>
+                <span class="text-muted-foreground text-[10px]">
+                  {chat.selectedFile.isImage ? 'Image' : 'PDF Document'} • {(
+                    chat.selectedFile.size / 1024
+                  ).toFixed(1)} KB
+                </span>
+              </div>
+              <button
+                type="button"
+                class="bg-muted/80 hover:bg-destructive hover:text-destructive-foreground text-muted-foreground flex size-5 cursor-pointer items-center justify-center rounded-full transition-colors"
+                onclick={() => chat.clearSelectedFile()}
+                title="Remove file"
+                aria-label="Remove attachment"
+              >
+                <X class="size-3" />
+              </button>
+            </div>
+          </div>
+        {/if}
 
-        <div class="flex items-center pr-1 pb-1">
-          {#if chat.isSending}
-            <Button
-              type="button"
-              variant="default"
-              size="icon-xs"
-              class="bg-foreground text-background hover:bg-foreground/90 flex size-8.5 cursor-pointer items-center justify-center rounded-full shadow-xs transition-all hover:scale-105 active:scale-95"
-              onclick={() => chat.stopGeneration()}
-              title="Stop generating (Esc)"
-              aria-label="Stop response"
-            >
-              <Square class="size-3.5 fill-current" />
-            </Button>
-          {:else}
-            <Button
-              type="submit"
-              variant="default"
-              size="icon-xs"
-              disabled={!chat.inputQuery.trim()}
-              class="bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 size-8.5 cursor-pointer rounded-full shadow-xs transition-transform active:scale-95"
-              aria-label="Send message"
-            >
-              <Send class="size-3.5" />
-            </Button>
-          {/if}
+        <div class="flex w-full items-end gap-2">
+          <input
+            type="file"
+            bind:this={fileInputRef}
+            accept="image/*,application/pdf"
+            class="hidden"
+            onchange={(e) => {
+              const file = e.currentTarget.files?.[0];
+              if (file) {
+                chat.handleFileSelect(file);
+                e.currentTarget.value = '';
+              }
+            }}
+          />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            class="text-muted-foreground hover:text-foreground mb-1 ml-1 size-8.5 shrink-0 rounded-full"
+            onclick={() => fileInputRef?.click()}
+            title="Attach image or PDF"
+            aria-label="Attach file"
+          >
+            <Paperclip class="size-4" />
+          </Button>
+
+          <textarea
+            bind:this={chat.textareaRef}
+            bind:value={chat.inputQuery}
+            oninput={() => chat.adjustTextareaHeight()}
+            onkeydown={(e) => chat.handleKeydown(e, selectedThreadId, onNewConversationCreated)}
+            placeholder="Ask anything about NCERT Science & Physics..."
+            rows={1}
+            class="text-foreground placeholder:text-muted-foreground/70 max-h-48 min-h-[44px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed outline-none"
+          ></textarea>
+
+          <div class="flex items-center pr-1 pb-1">
+            {#if chat.isSending}
+              <Button
+                type="button"
+                variant="default"
+                size="icon-xs"
+                class="bg-foreground text-background hover:bg-foreground/90 flex size-8.5 cursor-pointer items-center justify-center rounded-full shadow-xs transition-all hover:scale-105 active:scale-95"
+                onclick={() => chat.stopGeneration()}
+                title="Stop generating (Esc)"
+                aria-label="Stop response"
+              >
+                <Square class="size-3.5 fill-current" />
+              </Button>
+            {:else}
+              <Button
+                type="submit"
+                variant="default"
+                size="icon-xs"
+                disabled={!chat.inputQuery.trim() && !chat.selectedFile}
+                class="bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 size-8.5 cursor-pointer rounded-full shadow-xs transition-transform active:scale-95"
+                aria-label="Send message"
+              >
+                <Send class="size-3.5" />
+              </Button>
+            {/if}
+          </div>
         </div>
       </form>
 

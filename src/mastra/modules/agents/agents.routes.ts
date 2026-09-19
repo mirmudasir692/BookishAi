@@ -1,8 +1,16 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { AgentsController } from './agents.contoller';
 
 const router = Router();
 const agentsController = new AgentsController();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+  },
+});
 
 /**
  * @swagger
@@ -15,11 +23,31 @@ const agentsController = new AgentsController();
  * @swagger
  * /api/agents/chat:
  *   post:
- *     summary: Send a message to the AI agent
+ *     summary: Send a message to the AI agent with optional PDF/Image attachments
  *     tags: [Agents]
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - query
+ *             properties:
+ *               query:
+ *                 type: string
+ *                 description: The user's message or question
+ *                 example: "Analyze this file"
+ *               threadId:
+ *                 type: string
+ *                 description: Optional thread ID to continue an existing conversation
+ *                 example: "thread_12345"
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: PDF or Image files to attach
  *         application/json:
  *           schema:
  *             type: object
@@ -34,39 +62,30 @@ const agentsController = new AgentsController();
  *                 type: string
  *                 description: Optional thread ID to continue an existing conversation
  *                 example: "thread_12345"
+ *               files:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     filename:
+ *                       type: string
+ *                     contentType:
+ *                       type: string
+ *                     base64:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Successful response from the agent
  *         content:
- *           application/json:
+ *           text/event-stream:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   description: The agent's response
- *                   example: "I'm doing well, thank you!"
- *                 threadId:
- *                   type: string
- *                   description: The thread ID for this conversation
- *                   example: "thread_12345"
+ *               type: string
  *       400:
- *         description: Invalid input
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                 details:
- *                   type: array
- *                   items:
- *                     type: object
+ *         description: Invalid input or unsupported file type
  *       500:
  *         description: Internal server error
  */
-router.post('/chat', (req, res) => agentsController.chat(req, res));
+router.post('/chat', upload.array('files'), (req, res) => agentsController.chat(req, res));
 
 /**
  * @swagger

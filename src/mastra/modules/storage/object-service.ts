@@ -1,4 +1,3 @@
-// object-service.ts
 import {
   S3Client,
   CreateBucketCommand,

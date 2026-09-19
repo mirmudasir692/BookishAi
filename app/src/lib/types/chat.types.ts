@@ -18,6 +18,16 @@ export type {
   StreamEvent,
 };
 
+export interface SelectedFile {
+  file: File;
+  name: string;
+  contentType: string;
+  base64: string;
+  previewUrl?: string;
+  isImage: boolean;
+  size: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: string;

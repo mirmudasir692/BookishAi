@@ -1,8 +1,16 @@
 import { z } from 'zod';
 
+export const FileInputSchema = z.object({
+  filename: z.string(),
+  contentType: z.string(),
+  base64: z.string().optional(),
+  key: z.string().optional(),
+});
+
 export const ChatInputSchema = z.object({
   query: z.string().min(1, 'Query cannot be empty'),
   threadId: z.string().optional(),
+  files: z.array(FileInputSchema).optional(),
 });
 
 export const GetConversationsInputSchema = z.object({

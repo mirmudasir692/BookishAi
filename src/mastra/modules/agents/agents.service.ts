@@ -25,15 +25,9 @@ import {
   Message,
 } from '../../dto/agents';
 import { parseMessageContent } from '../../utils/message-parser';
-
-export class ValidationError extends Error {
-  public issues: ZodIssue[];
-  constructor(message: string, issues: ZodIssue[]) {
-    super(message);
-    this.name = 'ValidationError';
-    this.issues = issues;
-  }
-}
+import { IncomingFile } from 'src/mastra/types/utils.types';
+import { ValidationError } from 'src/mastra/utils/error';
+import { buildFileSummary, storeChatFiles } from 'src/mastra/utils/file-utils';
 
 export class AgentsService {
   private agent: Agent;
@@ -42,26 +36,59 @@ export class AgentsService {
     this.agent = mastra.getAgent('agent');
   }
 
-  async *chatStream(rawInput: ChatInput | unknown): AsyncGenerator<StreamEvent> {
+  async *chatStream(
+    rawInput: ChatInput | unknown,
+    files: IncomingFile[] = []
+  ): AsyncGenerator<StreamEvent> {
     const validation = ChatInputSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new ValidationError('Invalid input', validation.error.issues);
     }
 
-    const { query: userQuery, threadId } = validation.data;
+    const { query: userQuery, threadId, files: jsonFiles } = validation.data;
     const finalThreadId = threadId || generateId();
+
+    const storedFiles = await storeChatFiles({
+      threadId: finalThreadId,
+      files,
+      jsonFiles: jsonFiles ?? [],
+    });
+
+    for (const sf of storedFiles) {
+      logger.info(
+        {
+          threadId: finalThreadId,
+          filename: sf.filename,
+          url: sf.url,
+          contentType: sf.contentType,
+          key: sf.key,
+        },
+        `File received: ${sf.filename}, URL: ${sf.url}`
+      );
+    }
+
     yield { type: 'metadata', threadId: finalThreadId };
 
-    logger.debug({ threadId: finalThreadId, userQuery }, 'Rewriting query for agent');
+    let effectiveQuery = userQuery;
+    if (storedFiles.length > 0) {
+      effectiveQuery = `${userQuery}\n\n${buildFileSummary(storedFiles)}`;
+    }
+
+    logger.debug(
+      { threadId: finalThreadId, userQuery: effectiveQuery },
+      'Rewriting query for agent'
+    );
     const { text: query } = await generateText({
       model: lightChatModel,
-      prompt: prompts('QueryRewrite', userQuery),
+      prompt: prompts('QueryRewrite', effectiveQuery),
     });
+    console.log('re written query', query);
 
     logger.debug(
       { threadId: finalThreadId, rewrittenQuery: query },
       'Streaming response from agent'
     );
+
     const response = await this.agent.stream(query, {
       memory: { thread: finalThreadId, resource: 'anonymous' },
     });
@@ -72,7 +99,10 @@ export class AgentsService {
       } else if (chunk.type === 'reasoning-delta') {
         yield { type: 'thinking', content: chunk.payload.text };
       } else if (chunk.type === 'tool-call') {
-        const payload = chunk.payload as { args?: { query?: string }; toolName?: string };
+        const payload = chunk.payload as {
+          args?: { query?: string };
+          toolName?: string;
+        };
         const queryArg = payload?.args?.query;
         const msg = queryArg
           ? `🔍 Searching knowledge base for "${queryArg}"...\n`

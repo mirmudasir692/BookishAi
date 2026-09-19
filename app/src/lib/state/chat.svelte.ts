@@ -1,11 +1,12 @@
 import { tick } from 'svelte';
-import type { ChatMessage, Message } from '$lib/types/chat.types';
+import type { ChatMessage, Message, SelectedFile } from '$lib/types/chat.types';
 import { chatWithAgentStream, getConversation, deleteMessage } from '$lib/api/agents';
 import { toast } from '$lib/state/toast.svelte';
 
 export class ChatState {
   messages = $state<ChatMessage[]>([]);
   inputQuery = $state('');
+  selectedFile = $state<SelectedFile | null>(null);
   isLoadingHistory = $state(false);
   isSending = $state(false);
   deletingMessageId = $state<string | null>(null);
@@ -17,6 +18,59 @@ export class ChatState {
   scrollContainer: HTMLDivElement | null = null;
   textareaRef: HTMLTextAreaElement | null = null;
   private abortController: AbortController | null = null;
+
+  clearSelectedFile(): void {
+    if (this.selectedFile?.previewUrl) {
+      URL.revokeObjectURL(this.selectedFile.previewUrl);
+    }
+    this.selectedFile = null;
+  }
+
+  async handleFileSelect(file: File): Promise<void> {
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'bmp', 'tiff'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const contentType = file.type || '';
+    const isImage =
+      contentType.startsWith('image/') ||
+      (!!ext && ext !== 'pdf' && allowedExtensions.includes(ext));
+    const isPdf = contentType === 'application/pdf' || ext === 'pdf';
+
+    if (!isImage && !isPdf) {
+      toast.error('Only PDF and image files (PNG, JPG, WebP, SVG, PDF, etc.) are allowed');
+      return;
+    }
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = reader.result as string;
+          const commaIdx = res.indexOf(',');
+          resolve(commaIdx !== -1 ? res.slice(commaIdx + 1) : res);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      let previewUrl: string | undefined = undefined;
+      if (isImage) {
+        previewUrl = URL.createObjectURL(file);
+      }
+
+      this.clearSelectedFile();
+      this.selectedFile = {
+        file,
+        name: file.name,
+        contentType: contentType || (isPdf ? 'application/pdf' : `image/${ext}`),
+        base64,
+        previewUrl,
+        isImage,
+        size: file.size,
+      };
+    } catch (e: unknown) {
+      toast.error('Failed to process file');
+    }
+  }
 
   async scrollToBottom(smooth = false): Promise<void> {
     await tick();
@@ -62,6 +116,17 @@ export class ChatState {
         threadId: msg.threadId,
         resourceId: msg.resourceId,
       }));
+
+      console.log(`[Thread Load] Thread ${threadId} loaded with ${this.messages.length} messages.`);
+      this.messages.forEach((msg) => {
+        if (msg.content) {
+          const matches = msg.content.match(/\[Attached Media URL: (.*?) \|/g);
+          if (matches) {
+            console.log(`[Thread Load Media] Message ${msg.id} contains media URLs:`, matches);
+          }
+        }
+      });
+
       await this.scrollToBottom();
     } catch (err: unknown) {
       this.historyError = err instanceof Error ? err.message : 'Failed to load conversation';
@@ -73,6 +138,7 @@ export class ChatState {
 
   reset(): void {
     this.stopGeneration();
+    this.clearSelectedFile();
     this.messages = [];
     this.inputQuery = '';
     this.isLoadingHistory = false;
@@ -262,18 +328,22 @@ export class ChatState {
     onNewConversationCreated?: (threadId: string) => void
   ): Promise<void> {
     const query = this.inputQuery.trim();
-    if (!query || this.isSending) return;
+    if ((!query && !this.selectedFile) || this.isSending) return;
 
+    const currentFile = this.selectedFile;
     this.inputQuery = '';
+    this.clearSelectedFile();
     this.sendError = null;
     if (this.textareaRef) {
       this.textareaRef.style.height = '44px';
     }
 
+    const displayQuery = query || (currentFile ? `[Attached File: ${currentFile.name}]` : '');
+
     const tempUserMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       role: 'user',
-      content: query,
+      content: displayQuery,
       createdAt: new Date(),
     };
 
@@ -297,9 +367,24 @@ export class ChatState {
     this.abortController = new AbortController();
 
     try {
-      const payload: { query: string; threadId?: string } = {
-        query,
+      const payload: {
+        query: string;
+        threadId?: string;
+        files?: { filename: string; contentType: string; base64: string }[];
+      } = {
+        query: displayQuery,
       };
+
+      if (currentFile) {
+        payload.files = [
+          {
+            filename: currentFile.name,
+            contentType: currentFile.contentType,
+            base64: currentFile.base64,
+          },
+        ];
+      }
+
       const activeId = selectedThreadId || this.activeThreadId;
       if (activeId) {
         payload.threadId = activeId;

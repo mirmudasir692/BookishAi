@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import logger from '../../../utils/logger';
-import { AgentsService, ValidationError } from './agents.service';
+import { AgentsService } from './agents.service';
 import {
-  ChatInput,
   GetConversationsInput,
   GetConversationInput,
   DeleteConversationInput,
@@ -13,6 +12,7 @@ import {
   DeleteMessageResponse,
   ErrorResponse,
 } from '../../dto/agents';
+import { ValidationError } from 'src/mastra/utils/error';
 
 export class AgentsController {
   private agentsService: AgentsService;
@@ -21,7 +21,7 @@ export class AgentsController {
     this.agentsService = new AgentsService();
   }
 
-  async chat(req: Request<Record<string, string>, void, ChatInput>, res: Response): Promise<void> {
+  async chat(req: Request, res: Response): Promise<void> {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -35,7 +35,26 @@ export class AgentsController {
     });
 
     try {
-      const stream = this.agentsService.chatStream(req.body);
+      const incomingFiles: Array<{ filename: string; contentType: string; buffer: Buffer }> = [];
+      const multerFiles = req.files
+        ? Array.isArray(req.files)
+          ? req.files
+          : Object.values(req.files).flat()
+        : req.file
+          ? [req.file]
+          : [];
+
+      for (const file of multerFiles) {
+        if (file.buffer) {
+          incomingFiles.push({
+            filename: file.originalname || file.filename || 'file',
+            contentType: file.mimetype || 'application/octet-stream',
+            buffer: file.buffer,
+          });
+        }
+      }
+
+      const stream = this.agentsService.chatStream(req.body, incomingFiles);
 
       for await (const event of stream) {
         if (isAborted || res.destroyed || res.writableEnded) {
