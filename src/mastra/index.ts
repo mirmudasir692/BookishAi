@@ -7,9 +7,6 @@ import storage from './storage';
 
 await ensureDataSynced();
 export const mastra = new Mastra({
-  bundler: {
-    externals: ['@duckdb/node-bindings'],
-  },
   memory: { memory },
   storage: storage,
   agents: { agent },
