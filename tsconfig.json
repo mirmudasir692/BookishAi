@@ -12,6 +12,7 @@
     "checkJs": true,
     "resolveJsonModule": true,
     "types": ["node"],
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "$lib": ["app/src/lib"],
