@@ -26,6 +26,6 @@
     "src/**/*",
     "app/src/**/*",
     "app/vite.config.ts",
-    "config/env.config.ts"
+    "config/app.config.ts"
   ]
 }

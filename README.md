@@ -1,60 +1,171 @@
-# bookishai
+# BookishAI
 
-Welcome to your new [Mastra](https://mastra.ai) project! We're excited to see what you build.
-
-This starter provides you with a general-purpose Mastra agent that can research current information, manage multi-step tasks, work with local files, run approved shell commands, and create recurring schedules.
+BookishAI is an AI tutor and knowledge base system for NCERT Science and Physics (Classes 6-12). Built on top of the Mastra agent framework, LanceDB vector database, Express server, and a Svelte 5 frontend, BookishAI provides contextual retrieval and hallucination-free answers based on structured NCERT textbook data.
 
 ## Features
 
-- A project-level `workspace/` for files and command execution
-- Approval gates for file changes, deletions, and shell commands
-- Conversation memory, generated thread titles, and task tracking
-- Built-in web search and direct web page fetching
-- Recurring schedules that persist across restarts
-- Local libSQL storage and DuckDB observability, with optional Turso storage
-- A bundled Mastra skill that helps coding agents use current Mastra APIs
+- Hallucination-Free Retrieval: Leverages vector search over pre-processed NCERT Science and Physics content.
+- Automatic Dataset Synchronization: Clones pre-indexed vector data from Hugging Face on application startup if local LanceDB data is missing.
+- Multi-Query RAG & Fast In-Memory Reranking: Converts input questions into embedding vectors using local models, queries LanceDB chunks, deduplicates candidate documents, and performs fast in-memory cosine similarity reranking (`rerankBySimilarity`) for optimal performance without external model latency.
+- Local AI Stack: Integrates with Ollama for offline/local model execution (chat and embeddings).
+- Web & Desktop API Interface: Express REST API coupled with a modern Svelte 5 / Vite web interface supporting KaTeX math rendering and markdown formatting.
+- Persistent Agent Memory: Mastra LibSQL storage (`agents.db`) for conversation threads, titles, and agent state tracking.
 
-## Get started
+## Technology Stack
 
-Set your `OPENAI_API_KEY` in `.env` or in your environment, then run:
+- Agent Framework: Mastra Framework (`@mastra/core`)
+- LLM and Embedding Models: Ollama
+  - Primary Chat Model: `qwen3:1.7b-8k`
+  - Light Chat Model: `qwen2.5:0.5b`
+  - Embedding Model: `nomic-embed-text`
+- Vector Reranking: Fast In-Memory Cosine Similarity (`src/mastra/utils/reranker.ts`)
+- Vector Database: LanceDB (`@lancedb/lancedb`)
+- Dataset Hosting: Hugging Face Datasets (`mudasir692/bookishai-data`)
+- Backend Runtime: Node.js (>= 22.13.0), Express, TypeScript, Zod, Pino, LibSQL (`agents.db`)
+- Frontend UI: Svelte 5, SvelteKit, Vite, TailwindCSS (v4), Bits UI, Lucide Svelte, KaTeX
 
-```shell
-pnpm run dev
+## Architectural Design & Technical Rationale
+
+BookishAI is engineered with a self-contained, high-performance architecture focused on total isolation, maximum execution speed, and zero external cloud service dependencies:
+
+### 1. Unified In-Process Storage Architecture
+
+- **Embedded LanceDB Vector Database**: LanceDB runs **in-process** directly within the Node.js runtime, storing vector indices and document chunks on local disk (`data/lancedb`). This eliminates external database server daemons, network IPC latency, cloud database fees, and third-party API dependencies.
+- **In-Process SQLite/LibSQL Agent Memory**: Mastra conversation history, memory state, and thread metadata are stored in LibSQL (`agents.db`) executing inside the same API process. Sharing process space eliminates inter-process context switching and simplifies single-command deployments.
+- **Embedded S3-Compatible Asset & PDF Storage (`s3rver`)**: PDF textbook uploads and media assets are managed via an embedded `s3rver` instance initialized **in-process** alongside the Express server (`src/mastra/modules/storage/`). Assets are stored directly on local disk while using standard `@aws-sdk/client-s3` APIs, ensuring complete offline isolation while providing seamless upgrade compatibility for production cloud S3 storage if required.
+
+### 2. Fast In-Memory Cosine Similarity Reranking
+
+- Rather than invoking external cross-encoder model endpoints or heavy neural networks for document re-scoring, candidate chunks retrieved from LanceDB are deduplicated and reranked using fast in-memory cosine vector math (`rerankBySimilarity` in `src/mastra/utils/reranker.ts`).
+- This design choice reduces reranking latency to near zero, saves system memory, and allows the entire RAG pipeline to function 100% offline.
+
+### 3. Production-Grade Svelte 5 & SvelteKit Frontend
+
+- Built with **Svelte 5**, SvelteKit, Vite, and TailwindCSS (v4) for reactive, zero-runtime overhead rendering and minimal bundle size.
+- Features real-time **KaTeX** math typesetting for NCERT science/physics formulas, Markdown rendering, Lucide iconography, toast notifications, and dynamic dark-mode layouts—delivering a sleek, production-grade interface designed to impress both end-users and technical evaluators.
+
+## Hugging Face Dataset & LanceDB Setup
+
+The vector search capability relies on LanceDB tables stored in `data/lancedb`.
+
+BookishAI includes automatic dataset synchronization (`src/utils/syncData.ts`):
+
+1. Upon initializing Mastra (`src/mastra/index.ts`), the application checks whether the directory `data/lancedb` exists.
+2. If `data/lancedb` is absent, the application automatically runs a shallow git clone of the remote Hugging Face dataset repository (`https://huggingface.co/datasets/mudasir692/bookishai-data`) into a temporary workspace.
+3. The dataset files are placed into the local `data/` directory and temporary artifacts are removed.
+4. Subsequent server starts detect `data/lancedb` and skip the download.
+
+## Project Architecture
+
+```
+bookishai/
+├── app/                        # Svelte 5 / Vite Frontend Application
+│   ├── src/                    # Components, stores, and page routes
+│   ├── static/                 # Static web assets
+│   └── vite.config.ts          # Vite configuration
+├── config/
+│   └── env.config.ts           # Environment variable validation via Zod
+├── data/
+│   └── lancedb/                # Local LanceDB vector database (synced from HF)
+├── src/
+│   ├── main.ts                 # Express API server entry point
+│   ├── mastra/
+│   │   ├── agents/             # Agent definitions (BookishAI Agent)
+│   │   ├── config/             # Model and provider configurations
+│   │   ├── database/           # LanceDB connection and ChunkRepository
+│   │   ├── memory/             # Mastra thread memory setup
+│   │   ├── modules/agents/     # Express routes, controllers, and services
+│   │   ├── storage/            # LibSQL storage (agents.db)
+│   │   ├── tools/              # Search knowledge and RAG tools
+│   │   ├── types/              # TypeScript interfaces for chunks and vectors
+│   │   └── utils/              # Cosine similarity reranker and helper functions
+│   └── utils/
+│       ├── logger.ts           # Pino logging utility
+│       └── syncData.ts         # Hugging Face dataset clone manager
+├── .env.example                # Example environment variable file
+├── package.json                # Project dependencies and workspace scripts
+└── tsconfig.json               # TypeScript configuration
 ```
 
-Open [http://localhost:4111](http://localhost:4111) in your browser to access [Mastra Studio](https://mastra.ai/docs/studio/overview).
+## Prerequisites
 
-Select **Agent** in Mastra Studio and try one of these prompts:
+Before setting up BookishAI, ensure you have installed:
 
-- `Get the weather forecast for Austin this weekend.`
-- `Create a landing page for a Japanese sakura festival.`
-- `Check the SPCX stock price now, then check it every minute.`
+1. Node.js (>= 22.13.0)
+2. pnpm package manager (`npm install -g pnpm`)
+3. Git (required for Hugging Face dataset cloning)
+4. Ollama running locally at `http://localhost:11434` with required models pulled:
 
-The agent asks for approval before it changes files or runs commands. When it creates a schedule, it returns an ID that you can use to pause the schedule.
+```shell
+ollama pull qwen3:1.7b-8k
+ollama pull nomic-embed-text
+```
 
-## Workspace safety
+## Environment Configuration
 
-The local filesystem tools stay inside the project-level `workspace/` directory. Shell commands start in that directory, but `LocalSandbox` does not provide operating-system isolation by default. Review command approvals carefully, and do not expose this template through an unauthenticated public server.
+Create a `.env` file in the root directory based on the following template:
 
-## Storage
+```env
+NODE_ENV=development
+OLLAMA_BASE_URL=http://localhost:11434
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
+MONGODB_DB_NAME=bookishai
+MASTRA_PLATFORM_ACCESS_TOKEN=<your_mastra_access_token>
+MASTRA_PROJECT_ID=<your_mastra_project_id>
+VITE_API_BASE_URL=http://localhost:3000/
+```
 
-The default `file:./mastra.db` database stores agent memory, tasks, and schedules locally. To use Turso, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env`.
+## Installation & Setup
 
-Recurring schedules continue to use model tokens until you pause them. Ask the agent to pause a schedule with the ID returned by `start_schedule`.
+1. Clone the repository:
 
-## Making it yours
+```shell
+git clone https://github.com/mirmudasir692/BookishAi.git
+cd BookishAi
+```
 
-- Edit `src/mastra/agents/agent.ts` to change the model, instructions, memory, workspace, or approval policy.
-- Edit `src/mastra/tools/` to customize scheduling.
-- Edit `src/mastra/index.ts` to change storage and observability.
-- Add files or reusable skills under `workspace/` for the agent to use.
+2. Install dependencies:
 
-## Learn more
+```shell
+pnpm install
+```
 
-To learn more about Mastra, visit our [documentation](https://mastra.ai/docs/). If you're new to AI agents, check out our [course](https://mastra.ai/learn) and [YouTube videos](https://youtube.com/@mastra-ai). You can also join our [Discord](https://discord.gg/mastra-ai) community to get help and share your projects.
+3. Start the application stack:
 
-## Deploy to the Mastra platform
+To run both the backend Express server and the Svelte frontend concurrently:
 
-The [Mastra platform](https://projects.mastra.ai) provides two products for deploying and managing AI applications built with the Mastra framework. Learn more in the [Mastra platform documentation](https://mastra.ai/docs/mastra-platform/overview).
+```shell
+pnpm run dev:all
+```
 
-# BookishAi
+Alternatively, you can run services individually:
+
+- Express API Server: `pnpm run server:dev` (runs at http://localhost:3000)
+- Svelte Web UI: `pnpm run app:dev` (runs at http://localhost:5173)
+- Mastra Studio: `pnpm run dev` (runs at http://localhost:4111)
+
+## Available Scripts
+
+- `pnpm run dev:all`: Starts Express backend server and Svelte frontend concurrently.
+- `pnpm run server:dev`: Starts Express API server with live reload (`tsx watch src/main.ts`).
+- `pnpm run server:start`: Starts Express API server in production mode.
+- `pnpm run app:dev`: Starts Svelte UI dev server (`vite dev`).
+- `pnpm run app:build`: Builds Svelte UI for production.
+- `pnpm run app:check`: Runs Svelte type-checking.
+- `pnpm run dev`: Launches Mastra CLI development server / Studio (`mastra dev`).
+- `pnpm run check`: Executes TypeScript typecheck, ESLint, and Prettier checks.
+- `pnpm run typecheck`: Validates TypeScript compilation (`tsc --noEmit`).
+- `pnpm run lint`: Runs ESLint code style verification.
+- `pnpm run format`: Formats source files using Prettier.
+
+## Verification & Code Quality
+
+Run the check command to verify formatting, linting, and type definitions:
+
+```shell
+pnpm run check
+```
+
+## License
+
+Apache-2.0

@@ -1,0 +1,11 @@
+server:
+  port: 3000
+  env: development
+  apiBaseUrl: http://localhost:3000/
+
+ollama:
+  baseUrl: http://localhost:11434
+  models:
+    primaryChat: qwen3:1.7b-8k
+    lightChat: qwen2.5:0.5b
+    embedding: nomic-embed-text
