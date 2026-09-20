@@ -124,18 +124,28 @@ git clone https://github.com/mirmudasir692/BookishAi.git
 cd BookishAi
 ```
 
-2. Install dependencies:
+2. Run the automated environment setup script:
+
+On Linux / macOS / Git Bash:
 
 ```shell
-pnpm install
+./setup
 ```
+
+On Windows (PowerShell / CMD):
+
+```cmd
+.\setup
+```
+
+The setup script automatically checks Node.js, installs `pnpm` if needed, installs dependencies, verifies/installs Ollama, starts the Ollama daemon, and pulls/creates all required LLM & embedding models (`qwen3:1.7b-8k`, `qwen2.5:0.5b`, `nomic-embed-text`).
 
 3. Start the application stack:
 
 To run both the backend Express server and the Svelte frontend concurrently:
 
 ```shell
-pnpm run dev:all
+pnpm run project
 ```
 
 Alternatively, you can run services individually:
@@ -146,7 +156,8 @@ Alternatively, you can run services individually:
 
 ## Available Scripts
 
-- `pnpm run dev:all`: Starts Express backend server and Svelte frontend concurrently.
+- `pnpm run project`: Starts Express backend server and Svelte frontend concurrently.
+- `pnpm run setup`: Runs automated environment setup (`./setup`).
 - `pnpm run server:dev`: Starts Express API server with live reload (`tsx watch src/main.ts`).
 - `pnpm run server:start`: Starts Express API server in production mode.
 - `pnpm run app:dev`: Starts Svelte UI dev server (`vite dev`).

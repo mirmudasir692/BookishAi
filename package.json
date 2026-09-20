@@ -20,7 +20,9 @@
     "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
     "server:dev": "tsx watch src/main.ts",
     "server:start": "tsx src/main.ts",
-    "dev:all": "concurrently -n \"api,svelte\" -c \"magenta,cyan\" \"pnpm run server:dev\" \"pnpm run app:dev\"",
+    "setup": "./setup",
+    "project": "concurrently -n \"api,svelte\" -c \"magenta,cyan\" \"pnpm run server:dev\" \"pnpm run app:dev\"",
+    "dev:all": "pnpm run project",
     "prepare": "husky"
   },
   "lint-staged": {
