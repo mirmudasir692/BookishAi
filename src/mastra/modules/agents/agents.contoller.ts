@@ -13,6 +13,7 @@ import {
   ErrorResponse,
 } from '../../dto/agents';
 import { ValidationError } from 'src/mastra/utils/error';
+import { extractMulterFiles } from './agents.util';
 
 export class AgentsController {
   private agentsService: AgentsService;
@@ -35,25 +36,7 @@ export class AgentsController {
     });
 
     try {
-      const incomingFiles: Array<{ filename: string; contentType: string; buffer: Buffer }> = [];
-      const multerFiles = req.files
-        ? Array.isArray(req.files)
-          ? req.files
-          : Object.values(req.files).flat()
-        : req.file
-          ? [req.file]
-          : [];
-
-      for (const file of multerFiles) {
-        if (file.buffer) {
-          incomingFiles.push({
-            filename: file.originalname || file.filename || 'file',
-            contentType: file.mimetype || 'application/octet-stream',
-            buffer: file.buffer,
-          });
-        }
-      }
-
+      const incomingFiles = extractMulterFiles(req);
       const stream = this.agentsService.chatStream(req.body, incomingFiles);
 
       for await (const event of stream) {

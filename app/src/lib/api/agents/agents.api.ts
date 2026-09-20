@@ -91,9 +91,7 @@ export const chatWithAgentStream = async (
             throw new Error(event.error || 'Unknown error occurred in agent stream');
           }
         } catch (parseError) {
-          if (parseError instanceof SyntaxError) {
-            console.warn('Failed to parse SSE JSON payload:', dataStr);
-          } else {
+          if (!(parseError instanceof SyntaxError)) {
             throw parseError;
           }
         }

@@ -75,8 +75,8 @@
       setTimeout(() => {
         isCopied = false;
       }, 2000);
-    } catch (e) {
-      console.error('Failed to copy text:', e);
+    } catch {
+      //
     }
   }
 

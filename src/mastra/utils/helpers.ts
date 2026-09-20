@@ -21,39 +21,6 @@ export function getLanceDbPath(): string {
   return path.join(root, 'data', 'lancedb');
 }
 
-export interface SearchResultItem {
-  text: string;
-  metadata?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-const cleanupText = <T extends SearchResultItem>(
-  _text: string,
-  rankedIndicesStr: string,
-  rawResults: T[],
-  limit: number
-): { text: string; metadata?: Record<string, unknown> }[] => {
-  const matches = rankedIndicesStr.match(/\d+/g) || [];
-
-  const rankedIndices = matches
-    .map((s) => parseInt(s, 10))
-    .filter((n) => !isNaN(n) && n >= 0 && n < rawResults.length);
-
-  const uniqueIndices = [...new Set(rankedIndices)];
-
-  const rerankedResults = uniqueIndices
-    .map((idx) => rawResults[idx])
-    .slice(0, limit)
-    .map((r) => ({
-      text: r.text,
-      metadata: r.metadata,
-    }));
-
-  return rerankedResults;
-};
-
-function generateId(): string {
+export function generateId(): string {
   return randomUUID();
 }
-
-export { cleanupText, generateId };

@@ -117,16 +117,6 @@ export class ChatState {
         resourceId: msg.resourceId,
       }));
 
-      console.log(`[Thread Load] Thread ${threadId} loaded with ${this.messages.length} messages.`);
-      this.messages.forEach((msg) => {
-        if (msg.content) {
-          const matches = msg.content.match(/\[Attached Media URL: (.*?) \|/g);
-          if (matches) {
-            console.log(`[Thread Load Media] Message ${msg.id} contains media URLs:`, matches);
-          }
-        }
-      });
-
       await this.scrollToBottom();
     } catch (err: unknown) {
       this.historyError = err instanceof Error ? err.message : 'Failed to load conversation';

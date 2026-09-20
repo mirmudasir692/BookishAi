@@ -64,7 +64,7 @@ export type GetConversationsResponse = z.infer<typeof GetConversationsResponseSc
 export type GetConversationResponse = z.infer<typeof GetConversationResponseSchema>;
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
 export type DeleteMessageResponse = z.infer<typeof DeleteMessageResponseSchema>;
-export type ErrorResponse = {
+export interface ErrorResponse {
   error: string;
   details?: ZodIssue[];
-};
+}

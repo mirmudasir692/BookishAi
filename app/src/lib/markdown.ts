@@ -48,8 +48,7 @@ export function createKatexExtension(): MarkedExtension {
           throwOnError: false,
         });
         return `<div class="katex-display-wrapper my-3 overflow-x-auto py-1 text-center">${rendered}</div>\n`;
-      } catch (err) {
-        console.error('KaTeX block rendering error:', err);
+      } catch {
         return `<pre class="katex-error text-destructive">${token.text}</pre>`;
       }
     },
@@ -87,8 +86,7 @@ export function createKatexExtension(): MarkedExtension {
           displayMode: false,
           throwOnError: false,
         });
-      } catch (err) {
-        console.error('KaTeX inline rendering error:', err);
+      } catch {
         return `<span class="katex-error text-destructive">${token.text}</span>`;
       }
     },
@@ -111,8 +109,7 @@ export function renderMarkdown(content: string): string {
   try {
     const preprocessed = preprocessLatex(content);
     return markedInstance.parse(preprocessed, { async: false }) as string;
-  } catch (err) {
-    console.error('Error parsing markdown:', err);
+  } catch {
     return content;
   }
 }

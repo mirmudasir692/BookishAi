@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
+
 dotenv.config({ path: path.resolve(import.meta.dirname, '../.env') });
+
 const envSchema = z.object({
   OLLAMA_BASE_URL: z.string().url('OLLAMA_BASE_URL must be a valid URL'),
   MONGODB_URI: z.string().url('MONGODB_URI must be a valid MongoDB connection string'),
@@ -26,19 +28,15 @@ const validateEnv = (): Env => {
   };
 
   try {
-    const validatedEnv = envSchema.parse(env);
-    console.log('✅ Environment variables validated successfully');
-    return validatedEnv;
+    return envSchema.parse(env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Environment variable validation failed:');
-      error.issues.forEach((err) => {
-        console.error(`  - ${err.path.join('.')}: ${err.message}`);
-      });
-    } else {
-      console.error('❌ Unexpected error during validation:', error);
+      throw new Error(
+        `Environment variable validation failed: ${error.issues.map((i) => i.message).join(', ')}`,
+        { cause: error }
+      );
     }
-    process.exit(1);
+    throw error;
   }
 };
 

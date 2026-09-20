@@ -31,6 +31,7 @@ export const DeleteMessageInputSchema = z.object({
   messageId: z.string().min(1, 'messageId is required'),
 });
 
+export type FileInput = z.infer<typeof FileInputSchema>;
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 export type GetConversationsInput = z.infer<typeof GetConversationsInputSchema>;
 export type GetConversationInput = z.infer<typeof GetConversationInputSchema>;

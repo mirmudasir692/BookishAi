@@ -1,6 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { embedMany } from 'ai'; // Changed from 'embed' to 'embedMany'
+import { embedMany } from 'ai';
 import logger from '../../utils/logger';
 import { embeddingModel } from '../config/config';
 import { chunkRepository } from '../database/repositories/ChunkRepository';
@@ -64,15 +64,9 @@ export const searchKnowledgeTool = createTool({
       }
       const rawResults = Array.from(uniqueResultsMap.values());
 
-      const docsForPrompt = rawResults
-        .map((r: LanceChunk, index: number) => `[Document ${index}]: ${r.text}`)
-        .join('\n\n');
-      console.log('docs for prompt', docsForPrompt);
-
       const rerankedResults = rerankBySimilarity(embeddings, rawResults, limit);
 
       const cleanResults = rerankedResults.map(({ vector: _v, ...rest }) => rest);
-      console.log('reranked results', cleanResults);
 
       return {
         success: true,

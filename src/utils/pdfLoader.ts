@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import logger from './logger';
 import { parsePdf } from './pdfParser';
-import { ProgressState } from '../mastra/types/utils.types';
+import { loadProgress, saveProgress } from './pdfLoader.util';
 import { MDocument } from '@mastra/rag';
 import { embedMany } from 'ai';
 import { embeddingModel } from '../mastra/config/config';
@@ -11,29 +11,9 @@ import { chunkRepository } from '../mastra/database/repositories/ChunkRepository
 import { CreateChunkInput } from '../mastra/types/chunk.types';
 
 const BOOKS_DIR = path.join(process.cwd(), 'books');
-const META_FILE = path.join(process.cwd(), 'progress.json');
-
-function loadProgress(): ProgressState {
-  if (fs.existsSync(META_FILE)) {
-    try {
-      const data = fs.readFileSync(META_FILE, 'utf-8');
-      return JSON.parse(data);
-    } catch {
-      //
-    }
-  }
-  return {
-    currentIndex: -1,
-  };
-}
-
-function saveProgress(state: ProgressState) {
-  fs.writeFileSync(META_FILE, JSON.stringify(state, null, 2), 'utf-8');
-}
-
 const FOLDERS = ['6th', '7th', '8th', '9th', '10th', '11th', '12th', 'side-docs'];
 
-export async function loadBooksSequentially() {
+export async function loadBooksSequentially(): Promise<void> {
   const files: string[] = [];
 
   for (const folder of FOLDERS) {

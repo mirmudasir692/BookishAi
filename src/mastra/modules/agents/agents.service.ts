@@ -23,9 +23,10 @@ import {
 import { parseMessageContent } from '../../utils/message-parser';
 import { IncomingFile } from 'src/mastra/types/utils.types';
 import { ValidationError } from 'src/mastra/utils/error';
-import { buildFileSummary, storeChatFiles } from 'src/mastra/utils/file-utils';
+import { storeChatFiles } from 'src/mastra/utils/file-utils';
 import { extractPdfText } from '../../utils/document-ingestion';
 import { handleStreamEvents } from '../../utils/stream-utils';
+import { buildAgentQueryContext } from './agents.util';
 
 export class AgentsService {
   private agent: Agent;
@@ -82,28 +83,7 @@ export class AgentsService {
 
     yield { type: 'metadata', threadId: finalThreadId };
 
-    const contextParts: string[] = [];
-
-    if (extractedPdfTexts.length > 0) {
-      contextParts.push(...extractedPdfTexts);
-    }
-
-    const nonPdfFiles = storedFiles.filter((sf) => sf.contentType !== 'application/pdf');
-    if (nonPdfFiles.length > 0) {
-      contextParts.push(buildFileSummary(nonPdfFiles));
-    }
-
-    const isPlaceholderQuery = userQuery && /^\[Attached File: .*\]$/.test(userQuery.trim());
-    const validUserQuery = isPlaceholderQuery ? '' : (userQuery ?? '').trim();
-
-    let query = validUserQuery;
-
-    if (contextParts.length > 0) {
-      query =
-        validUserQuery !== ''
-          ? `${validUserQuery}\n\n${contextParts.join('\n\n')}`
-          : contextParts.join('\n\n');
-    }
+    const query = buildAgentQueryContext(userQuery, extractedPdfTexts, storedFiles);
 
     logger.debug({ threadId: finalThreadId, query }, 'Streaming response from agent');
 
