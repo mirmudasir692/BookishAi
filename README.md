@@ -82,7 +82,6 @@ bookishai/
 │   └── utils/
 │       ├── logger.ts           # Pino logging utility
 │       └── syncData.ts         # Hugging Face dataset clone manager
-├── .env.example                # Example environment variable file
 ├── package.json                # Project dependencies and workspace scripts
 └── tsconfig.json               # TypeScript configuration
 ```
@@ -99,20 +98,6 @@ Before setting up BookishAI, ensure you have installed:
 ```shell
 ollama pull qwen3:1.7b-8k
 ollama pull nomic-embed-text
-```
-
-## Environment Configuration
-
-Create a `.env` file in the root directory based on the following template:
-
-```env
-NODE_ENV=development
-OLLAMA_BASE_URL=http://localhost:11434
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
-MONGODB_DB_NAME=bookishai
-MASTRA_PLATFORM_ACCESS_TOKEN=<your_mastra_access_token>
-MASTRA_PROJECT_ID=<your_mastra_project_id>
-VITE_API_BASE_URL=http://localhost:3000/
 ```
 
 ## Installation & Setup
