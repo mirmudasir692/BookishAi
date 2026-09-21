@@ -5,6 +5,15 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   envDir: '../',
+  server: {
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     tailwindcss(),
     sveltekit({

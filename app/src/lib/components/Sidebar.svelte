@@ -52,9 +52,9 @@
 {/if}
 
 <aside
-  class="bg-sidebar bg-muted/30 border-border/80 fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r transition-transform duration-300 ease-in-out md:static md:z-auto md:w-68 md:translate-x-0 lg:w-72 {isOpenMobile
-    ? 'translate-x-0 shadow-2xl'
-    : '-translate-x-full'}"
+  class="bg-sidebar bg-muted/30 border-border/80 fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col border-r transition-all duration-300 ease-in-out md:static md:z-auto md:w-68 md:translate-x-0 md:opacity-100 md:pointer-events-auto md:visible lg:w-72 {isOpenMobile
+    ? 'translate-x-0 opacity-100 shadow-2xl pointer-events-auto visible'
+    : '-translate-x-full opacity-0 pointer-events-none invisible'}"
 >
   <div class="flex items-center justify-between p-3.5 pb-2">
     <div class="flex items-center gap-2.5 px-1">

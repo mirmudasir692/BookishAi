@@ -114,7 +114,7 @@
 </svelte:head>
 
 <div
-  class="bg-background text-foreground flex h-screen w-screen overflow-hidden font-sans antialiased"
+  class="bg-background text-foreground flex h-[100dvh] w-full max-w-full overflow-hidden font-sans antialiased"
 >
   <Sidebar
     {selectedThreadId}
