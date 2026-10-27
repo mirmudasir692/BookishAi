@@ -77,8 +77,8 @@ Write-Host "   -> Pulling base model qwen3:1.7b..." -ForegroundColor Green
 ollama pull qwen3:1.7b
 
 if (Test-Path "Modelfile.qwen3-8k") {
-    Write-Host "   -> Creating custom qwen3:1.7b-8k model from Modelfile.qwen3-8k..." -ForegroundColor Green
-    ollama create qwen3:1.7b-8k -f Modelfile.qwen3-8k
+    Write-Host "   -> Creating custom qwen3:1.7b model from Modelfile.qwen3-8k..." -ForegroundColor Green
+    ollama create qwen3:1.7b -f Modelfile.qwen3-8k
 }
 
 Write-Host "   -> Pulling light model qwen2.5:0.5b..." -ForegroundColor Green

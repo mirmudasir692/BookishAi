@@ -15,7 +15,7 @@ BookishAI is an AI tutor and knowledge base system for NCERT Science and Physics
 
 - Agent Framework: Mastra Framework (`@mastra/core`)
 - LLM and Embedding Models: Ollama
-  - Primary Chat Model: `qwen3:1.7b-8k`
+  - Primary Chat Model: `qwen3:1.7b`
   - Light Chat Model: `qwen2.5:0.5b`
   - Embedding Model: `nomic-embed-text`
 - Vector Reranking: Fast In-Memory Cosine Similarity (`src/mastra/utils/reranker.ts`)
@@ -96,7 +96,7 @@ Before setting up BookishAI, ensure you have installed:
 4. Ollama running locally at `http://localhost:11434` with required models pulled:
 
 ```shell
-ollama pull qwen3:1.7b-8k
+ollama pull qwen3:1.7b
 ollama pull nomic-embed-text
 ```
 
@@ -123,7 +123,7 @@ On Windows (PowerShell / CMD):
 .\setup
 ```
 
-The setup script automatically checks Node.js, installs `pnpm` if needed, installs dependencies, verifies/installs Ollama, starts the Ollama daemon, and pulls/creates all required LLM & embedding models (`qwen3:1.7b-8k`, `qwen2.5:0.5b`, `nomic-embed-text`).
+The setup script automatically checks Node.js, installs `pnpm` if needed, installs dependencies, verifies/installs Ollama, starts the Ollama daemon, and pulls/creates all required LLM & embedding models (`qwen3:1.7b`, `qwen2.5:0.5b`, `nomic-embed-text`).
 
 3. Start the application stack:
 

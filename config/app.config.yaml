@@ -6,6 +6,6 @@ server:
 ollama:
   baseUrl: http://localhost:11434
   models:
-    primaryChat: qwen3:1.7b-8k
+    primaryChat: qwen3:1.7b
     lightChat: qwen2.5:0.5b
     embedding: nomic-embed-text

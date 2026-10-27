@@ -13,7 +13,6 @@ src/mastra/public/
 *.duckdb
 *.duckdb.wal
 ./progress.json
-books
 data
 .svelte-kit
 **/.svelte-kit

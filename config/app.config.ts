@@ -13,12 +13,12 @@ const configSchema = z.object({
     baseUrl: z.url().default('http://localhost:11434'),
     models: z
       .object({
-        primaryChat: z.string().default('qwen3:1.7b-8k'),
+        primaryChat: z.string().default('qwen3:1.7b'),
         lightChat: z.string().default('qwen2.5:0.5b'),
         embedding: z.string().default('nomic-embed-text'),
       })
       .default({
-        primaryChat: 'qwen3:1.7b-8k',
+        primaryChat: 'qwen3:1.7b',
         lightChat: 'qwen2.5:0.5b',
         embedding: 'nomic-embed-text',
       }),
