@@ -4,6 +4,25 @@ import { Memory } from '@mastra/memory';
 import { searchKnowledgeTool } from '../tools/memory-tools';
 import { prompts } from '../utils/prompts';
 import { chatModel } from '../config/config';
+import { mcpClient } from '../mcp/client';
+import { USE_RAG } from '../config/constants';
+
+async function resolveTools() {
+  if (USE_RAG) {
+    return { searchKnowledgeTool };
+  }
+
+  const mcpTools = await mcpClient.listTools();
+  console.log('[okf] MCP returned tools:', Object.keys(mcpTools));
+
+  if (Object.keys(mcpTools).length === 0) {
+    console.warn('[okf] MCP returned no tools — check the server spawn');
+  }
+
+  return { ...mcpTools };
+}
+
+const tools = await resolveTools();
 
 export const agent = new Agent({
   id: 'bookishai-agent',
@@ -27,8 +46,6 @@ export const agent = new Agent({
       },
     },
   }),
-  tools: {
-    'search-knowledge': searchKnowledgeTool,
-  },
+  tools,
   signals: [new TaskSignalProvider()],
 });
